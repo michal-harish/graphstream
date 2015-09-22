@@ -21,11 +21,13 @@ The GraphStream Pipeline consists of 2 components:
 1. **SyncsToGraph** - this is a simple transformation of `datasync` topic to `graphstream` delta topic - syncs are filtered and for each sync that passes two respective BSPMessage(s) are sent representing edge and reverse edge of the connection.
 2. **ConnectedBSP** - this is a recursive operator which consumes (and recursively produces into) `graphstream` delta topic as well as publishes the new state into the `graphstate` commit log topic.
 
-*TODO illustration of the whole pipeline*
+![hello](doc/GraphStream_architecture.png)
 
 While SyncsToGraph is a simple stream-to-stream map operation, the internal workings of ConnectedBSP requires a more detailed explanation. It also illustrates more general concept of local state in the realm of stream processing, more specifically *recurisve stateful stream processing*
 
-*TODO illustration*
+First we need a different kind of topic - a commit log which is supported by Kafka fetaure called log compaction. A topic 'graphstate' in our architecture is log-compacted.
+
+*TODO log compaction *
 
 
 <a name="configuration">
