@@ -3,6 +3,7 @@ package net.imagini.graphstream.connectedbsp
 import java.io.FileInputStream
 import java.util.Properties
 
+import net.imagini.graphstream.syncstransform.SyncsToGraph._
 import org.apache.donut.DonutApp
 
 /**
@@ -17,26 +18,20 @@ import org.apache.donut.DonutApp
  * The input into this application comes from SyncsTransformApplication which provides fresh edges into the graph.
  * The input is amplified by recursive consulation of State and production of secondary delta messages.
  */
-class ConnectedBSP(config: Properties) extends DonutApp[ConnectedBSPProcessUnit](config) {
-  def this() = this(new Properties {
-    /**
-     * pipeline environment global configuration
-     * yarn1.site=/etc/...
-     * yarn1.queue=...
-     * yarn1.classpath=/opt/scala/scala-library-2.10.4.jar:/opt/scala/kafka_2.10-0.8.2.1.jar
-     * zookeeper.connect=...
-     * kafka.brokers=...
-     */
 
-    load(new FileInputStream("/etc/vdna/graphstream/config.properties"))
-
-    /**
-     *  GraphStreamingBSP component configuration
-     */
-    setProperty("yarn1.keepContainers", "true")
-    setProperty("kafka.group.id", "GraphStreamingBSP")
-    setProperty("kafka.topics", "graphstream,graphstate")
-    setProperty("kafka.cogroup", "true")
-  })
-
+object ConnectedBSP extends App {
+  val config = new Properties
+  config.load( new FileInputStream(args(0)))
+  new ConnectedBSP(config).runOnYarn(taskMemoryMb = 20 * 1024, awaitCompletion = false)
 }
+
+class ConnectedBSP(config: Properties) extends DonutApp[ConnectedBSPProcessUnit]({
+  /**
+   *  GraphStreamingBSP component configuration
+   */
+  config.setProperty("yarn1.keepContainers", "true")
+  config.setProperty("kafka.group.id", "GraphStreamingBSP")
+  config.setProperty("kafka.topics", "graphstream,graphstate")
+  config.setProperty("kafka.cogroup", "true")
+  config
+})

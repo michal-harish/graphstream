@@ -16,33 +16,23 @@ object Config extends Properties {
   load( new FileInputStream("/etc/vdna/graphstream/config.properties"))
 }
 
-object GraphStreamLocalLauncher extends App {
+object ConnectedBSPLocalLauncher extends App {
   new ConnectedBSP(Config).runLocally(multiThreadMode = false)
 }
 
-object GraphStreamYarnLauncher extends App {
-  new ConnectedBSP().runOnYarn(20 * 1024, awaitCompletion = true)
+object ConnectedBSPYarnLauncher extends App {
+  new ConnectedBSP(Config).runOnYarn(taskMemoryMb = 20 * 1024, awaitCompletion = true)
 }
 
-
-object GraphStreamYarnSubmit extends App {
-  new ConnectedBSP().runOnYarn(20 * 1024, awaitCompletion = false)
+object SyncsToGraphLocalLauncher extends App {
+  new SyncsToGraph(Config).runLocally(multiThreadMode = false)
 }
 
-object SyncTransformLocalLauncher extends App {
-  new SyncsToGraph().runLocally(multiThreadMode = false)
+object SyncsToGraphYarnLauncher extends App {
+  new SyncsToGraph(Config).runOnYarn(taskMemoryMb = 16 * 1024, awaitCompletion = true )
 }
 
-object SyncTransformYarnLauncher extends App {
-  new SyncsToGraph().runOnYarn(taskMemoryMb = 16 * 1024, awaitCompletion = true )
-  //FIXME json deserializers kill memory - even 12 x 3GBs (!) will kill container but this is a simple transformation 256Mb should be enough
-}
-
-object SyncTransformYarnSubmit extends App {
-  new SyncsToGraph().runOnYarn(taskMemoryMb = 4 * 1024, awaitCompletion = false)
-}
-
-object GraphStreamDebugger extends App {
+object DebugGraphStream extends App {
   val kafkaUtils = new KafkaUtils(Config)
   kafkaUtils.createDebugConsumer("graphstream", (msg) => {
     val vid = BSPMessage.decodeKey(msg.key)
@@ -56,7 +46,7 @@ object GraphStreamDebugger extends App {
   })
 }
 
-object GraphStateDebugger extends App {
+object DebugGraphState extends App {
   val kafkaUtils = new KafkaUtils(Config)
   kafkaUtils.createDebugConsumer("graphstate", (msg) => {
     val vid = BSPMessage.decodeKey(msg.key)
@@ -70,12 +60,17 @@ object GraphStateDebugger extends App {
   })
 }
 
-object OffsetReport extends App {
+object DebugOffsetReport extends App {
 
   val kafkaUtils = new KafkaUtils(Config)
 
-  kafkaUtils.getPartitionMap(Seq("datasync")).foreach { case (topic, numPartitions) => {
-    List("GraphStreamingBSP", "").foreach(consumerGroupId => {
+  val inspect = Map(
+    ("datasync" -> "GraphSyncsStreamingBSP"),
+    ("graphstream" ->  "GraphStreamingBSP"),
+    ("graphstate" -> "GraphStreamingBSP")
+  )
+  kafkaUtils.getPartitionMap(inspect.keys.toList).foreach { case (topic, numPartitions) => {
+    val consumerGroupId = inspect(topic)
       for (p <- (0 to numPartitions - 1)) {
         val consumer = new kafkaUtils.PartitionConsumer(topic, p, consumerGroupId)
 
@@ -83,6 +78,6 @@ object OffsetReport extends App {
 
         println(s"$topic/$p OFFSET RANGE = ${earliest}:${latest} => ${consumerGroupId} group offset ${consumed} }")
       }
-    })
-  }}
+    }
+  }
 }

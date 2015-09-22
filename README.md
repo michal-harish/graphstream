@@ -2,21 +2,23 @@
 
 This is a prototype in 2 senses:
 
-1. Donut - Recursive stream processing framework which is included by source and as a project lives [here](https://github.com/michal-harish/donut)
-2. Streaming BSP equivalent of the Connected Components algorithm implemented ind [VisualDNA Identity Graph](http://stash.visualdna.com/projects/DXP/repos/dxp-spark/browse)
+* Recursive stream processing framework which is included by source and as a project lives [here](https://github.com/michal-harish/donut)
+* Streaming BSP equivalent of the Connected Components algorithm implemented ind [VisualDNA Identity Graph](http://stash.visualdna.com/projects/DXP/repos/dxp-spark/browse)
+
+Contents
 
 1. [GraphStream Pipeline Architecture](#architecture)
 2. [Configuration](#configuration)
 3. [Operations](#operations)
 4. [Development](#development)
 
-<a name="archiecture">
+<a name="architecture">
 ## GraphStream Pipeline Architecture
 </a>
 
-... 2 components which interact via `graphstream` topic, ...
+*TODO 2 components which interact via `graphstream` topic, ...*
 
-<a name="development">
+<a name="configuration">
 ## Configuration
 </a>
 
@@ -37,6 +39,30 @@ NOTE: The `yarn1.classpath` means that we have already distributed large fat jar
 <a name="operations">
 ## Operations
 </a>
+
+### Packaging components and submitting them to YARN cluster
+```
+mvn clean package
+```
+The maven command above will generate an assembly jar for each component:
+
+1. target/SyncsToGraph.jar
+2. target/ConnectedBSP.jar
+
+The jars can be deployed to maven and from there managed by jenkins or if you want to test and have yarn environment on your local machine.
+In each case the command is the same:
+
+```
+java -cp "`yarn classpath`:target/GraphStream-0.9.jar:<PATH_TO_SCALA_LIBRARY>" <COMPONENT_MAIN_OBJECT> <PATH_TO_GRAPHSTREAM_APP>
+```
+
+For example:
+
+```
+java -cp "`yarn classpath`:target/GraphStream-0.9.jar:/Users/mharis/.m2/repository/org/scala-lang/scala-library/2.10.4/scala-library-2.10.4.jar" \
+ net.imagini.graphstream.syncstransform.SyncsToGraph \
+ /etc/vdna/graphstream/config.properties
+```
 
 ### Brokers configuration
 For state topics we require log cleaner enabled on the brokers
@@ -115,11 +141,10 @@ By default, IntelliJ should preserve these added folders on re-import but in cas
 
 For launching the application from within the IntelliJ runtime there are several starting points all which are located in the *test* source net.imagini.graphstream.Launchers.scala.
 The reason for test package is that many dependencies are provided and not available without hadoop/yarn environment but provided scope is available in the maven test phase:
-There are two components(see [architecture](#architecture) above) and each has 3 different launchers:
+There are two components(see [architecture](#architecture) above) and each has 2 different launchers:
 
-1. LocalLaunch - is for debugging and doesn't actually submit the application to yarn and all streaming and processing happens locally
-2. YarnLaunch - submits the application to the YARN cluster and waits for completion printing any progresss - stopping the application will attempt to kill the yarn context as well from the shutdown hook
-3. YarnSubmit - submits the application to the YARN cluster and disconnects, leaving the application running independently 
+1. YarnLaunch - submits the application to the YARN cluster and waits for completion printing any progress - stopping the application will attempt to kill the yarn context as well from the shutdown hook
+2. LocalLaunch - is for debugging and doesn't actually submit the application to yarn and all streaming and processing happens locally
 
 ### TODOs
 
