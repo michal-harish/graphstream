@@ -25,9 +25,9 @@ The GraphStream Pipeline consists of 2 components:
 
 While SyncsToGraph is a simple stream-to-stream map operation, the internal workings of ConnectedBSP requires a more detailed explanation. It also illustrates more general concept of local state in the realm of stream processing, more specifically *recurisve stateful stream processing*
 
-First we need a different kind of topic - a commit log which is supported by Kafka fetaure called log compaction. A topic 'graphstate' in our architecture is log-compacted.
+First we need a different kind of topic - a commit log which is supported by Kafka fetaure called [Log  Compaction](https://cwiki.apache.org/confluence/display/KAFKA/Log+Compaction). A topic 'graphstate' in our architecture is log-compacted.
 
-*TODO log compaction *
+*TODO zoom on the ConnectedBSP*
 
 
 <a name="configuration">
