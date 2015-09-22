@@ -4,8 +4,8 @@ import java.io.FileInputStream
 import java.util.Properties
 
 import net.imagini.graphstream.common.BSPMessage
-import net.imagini.graphstream.connectedbsp.ConnectedBSP
-import net.imagini.graphstream.syncstransform.SyncsToGraph
+import net.imagini.graphstream.connectedbsp.ConnectedBSPApplication
+import net.imagini.graphstream.syncstransform.SyncsToGraphApplication
 import org.apache.donut.KafkaUtils
 
 /**
@@ -17,19 +17,19 @@ object Config extends Properties {
 }
 
 object ConnectedBSPLocalLauncher extends App {
-  new ConnectedBSP(Config).runLocally(multiThreadMode = false)
+  new ConnectedBSPApplication(Config).runLocally(multiThreadMode = false)
 }
 
 object ConnectedBSPYarnLauncher extends App {
-  new ConnectedBSP(Config).runOnYarn(taskMemoryMb = 20 * 1024, awaitCompletion = true)
+  new ConnectedBSPApplication(Config).runOnYarn(taskMemoryMb = 20 * 1024, awaitCompletion = true)
 }
 
 object SyncsToGraphLocalLauncher extends App {
-  new SyncsToGraph(Config).runLocally(multiThreadMode = false)
+  new SyncsToGraphApplication(Config).runLocally(multiThreadMode = false)
 }
 
 object SyncsToGraphYarnLauncher extends App {
-  new SyncsToGraph(Config).runOnYarn(taskMemoryMb = 16 * 1024, awaitCompletion = true )
+  new SyncsToGraphApplication(Config).runOnYarn(taskMemoryMb = 16 * 1024, awaitCompletion = true )
 }
 
 object DebugGraphStream extends App {

@@ -1,11 +1,11 @@
 # VisualDNA GraphStream Project
 
-This is a prototype in 2 senses:
+### This is a prototype in two respects:
 
 * Recursive stream processing framework which is included by source and as a project lives [here](https://github.com/michal-harish/donut)
-* Streaming BSP equivalent of the Connected Components algorithm implemented ind [VisualDNA Identity Graph](http://stash.visualdna.com/projects/DXP/repos/dxp-spark/browse)
+* Streaming BSP equivalent of the Connected Components algorithm implemented in [VisualDNA Identity Graph](http://stash.visualdna.com/projects/DXP/repos/dxp-spark/browse)
 
-Contents
+### Contents
 
 1. [GraphStream Pipeline Architecture](#architecture)
 2. [Configuration](#configuration)
@@ -16,7 +16,17 @@ Contents
 ## GraphStream Pipeline Architecture
 </a>
 
-*TODO 2 components which interact via `graphstream` topic, ...*
+The GraphStream Pipeline consists of 2 components:
+
+1. **SyncsToGraph** - this is a simple transformation of `datasync` topic to `graphstream` delta topic - syncs are filtered and for each sync that passes two respective BSPMessage(s) are sent representing edge and reverse edge of the connection.
+2. **ConnectedBSP** - this is a recursive operator which consumes (and recursively produces into) `graphstream` delta topic as well as publishes the new state into the `graphstate` commit log topic.
+
+*TODO illustration of the whole pipeline*
+
+While SyncsToGraph is a simple stream-to-stream map operation, the internal workings of ConnectedBSP requires a more detailed explanation. It also illustrates more general concept of local state in the realm of stream processing, more specifically *recurisve stateful stream processing*
+
+*TODO illustration*
+
 
 <a name="configuration">
 ## Configuration
@@ -44,24 +54,16 @@ NOTE: The `yarn1.classpath` means that we have already distributed large fat jar
 ```
 mvn clean package
 ```
-The maven command above will generate an assembly jar for each component:
-
-1. target/SyncsToGraph.jar
-2. target/ConnectedBSP.jar
-
-The jars can be deployed to maven and from there managed by jenkins or if you want to test and have yarn environment on your local machine.
-In each case the command is the same:
+The maven command above will generate an assembly jar for all components: `targets/SyncsToGraph-0.9.jar` and a `./submit` which can be used as follows:  
 
 ```
-java -cp "`yarn classpath`:target/GraphStream-0.9.jar:<PATH_TO_SCALA_LIBRARY>" <COMPONENT_MAIN_OBJECT> <PATH_TO_GRAPHSTREAM_APP>
+./submit net.imagini.graphstream.connectedbsp.ConnectedBSP /etc/vdna/graphstream/config.properties
 ```
 
-For example:
+OR
 
 ```
-java -cp "`yarn classpath`:target/GraphStream-0.9.jar:/Users/mharis/.m2/repository/org/scala-lang/scala-library/2.10.4/scala-library-2.10.4.jar" \
- net.imagini.graphstream.syncstransform.SyncsToGraph \
- /etc/vdna/graphstream/config.properties
+./submit net.imagini.graphstream.syncstransform.SyncsToGraph /etc/vdna/graphstream/config.properties
 ```
 
 ### Brokers configuration
