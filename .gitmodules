@@ -1,0 +1,3 @@
+[submodule "donut"]
+	path = donut
+	url = git@github.com:michal-harish/donut.git
