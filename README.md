@@ -100,7 +100,9 @@ And then creating topic with compact cleanup policy
 </a>
 ### Configuring IntelliJ and Maven 
 
-The GraphStream project has a direct soruce dependencies which are not standard maven pom-declared dependencies. These help to rapidly develop th underlying Donut and Yarn1 frameworks.
+The GraphStream project has a direct source dependencies which are not standard maven pom-declared dependencies
+ but are pulled in as git submodules. This way it is possible rapidly develop teh underlying Donut and Yarn1 frameworks
+ which are still unstable. 
 
 ```
 graphstream.git (stash.visualdna.com)
@@ -110,9 +112,13 @@ graphstream.git (stash.visualdna.com)
             +-- yarn1.git (github.com/michal-harish/yarn1)
 ```
 
-After cloning the graphstream repo, you need to initialise the submodules:
+So in order to be able to clone and initialise the codebase you'll need a github account and ssh keys of your
+development machine to be added there. If you want to commit to the Donut or Yarn1 ask MH to add your ssh keys
+to the projects. So after that you can clone the graphstream repo and initialise the submodules:
 
 ```
+git clone git@stash.visualdna.com:7999/dxp/graphstream.git
+cd graphstream
 git submodule update --init
 cd donut
 git submodule update --init
