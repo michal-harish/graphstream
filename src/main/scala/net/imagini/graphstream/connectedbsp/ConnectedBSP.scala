@@ -10,8 +10,11 @@ import java.util.Properties
  *
  * ./submit net.imagini.graphstream.connectedbsp.ConnectedBSP /etc/vdna/graphstream/config.properties
  */
-object ConnectedBSP extends App {
-  val config = new Properties
-  config.load( new FileInputStream(args(0)))
-  new ConnectedBSPApplication(config).runOnYarn(taskMemoryMb = 16 * 1024, awaitCompletion = false)
+object ConnectedBSP {
+  def main(args: Array[String]) = {
+    val config = new Properties
+    config.load(new FileInputStream(args(0)))
+    val app = new ConnectedBSPApplication(config)
+    app.runOnYarn(taskMemoryMb = 8 * 1024, awaitCompletion = args.length == 2 && args(1) == "wait")
+  }
 }
