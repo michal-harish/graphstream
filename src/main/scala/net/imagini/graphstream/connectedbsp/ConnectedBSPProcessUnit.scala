@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import kafka.message.MessageAndOffset
 import kafka.producer.KeyedMessage
-import net.imagini.graphstream.common.BSPMessage
+import net.imagini.graphstream.common.{Edge, Vid, BSPMessage}
 import org.apache.donut._
 
 /**
@@ -26,6 +26,16 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
   private val graphstreamProducer = kafkaUtils.createSnappyProducer[KafkaRangePartitioner](numAcks = 0, batchSize = 1000)
 
   private val stateProducer = kafkaUtils.createCompactProducer[KafkaRangePartitioner](numAcks = 0, batchSize = 200)
+
+  override def onShutdown: Unit = graphstreamProducer.close
+
+  override def awaitingTermination {
+    println(
+      s"=> graphstream(${bspIn.get} - evicted ${bspEvicted.get} + missed ${bspMiss.get} + hit ${bspUpdated.get}) " +
+        s"=> graphstate(${stateIn.get}) " +
+        s"=> state.size = " + localState.size + ", state.memory = " + localState.minSizeInByte / 1024 / 1024 + " Mb"
+    )
+  }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {
     topic match {
@@ -65,36 +75,33 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
                 val newState = BSPMessage.encodePayload((iteration, newEdges))
                 localState.put(key, newState)
                 if (iteration < MAX_ITER) {
-                  val newPayload = ByteBuffer.wrap(BSPMessage.encodePayload(((iteration + 1).toByte, newEdges)))
-                  existingEdges.foreach { case (v,props) => {
-                    graphstreamProducer.send(
-                      new KeyedMessage("graphstream", ByteBuffer.wrap(BSPMessage.encodeKey(v)), newPayload))
-                  }}
-                  val previousPayload = ByteBuffer.wrap(BSPMessage.encodePayload(((iteration + 1).toByte, existingEdges)))
-                  newEdges.foreach { case (v,props) => {
-                    graphstreamProducer.send(
-                      new KeyedMessage("graphstream", ByteBuffer.wrap(BSPMessage.encodeKey(v)), previousPayload))
-                  }}
+                  propagateEdges(iteration, newEdges, existingEdges)
+                  propagateEdges(iteration, existingEdges, newEdges)
                 }
               }
             }
           }
         }
+
+        /**
+         * Propagate edges to each of the targets if the probability doesn't fall below 0.75 in the process.
+         * @param edges
+         * @param targets
+         * @return
+         */
+        private def propagateEdges(iteration: Int, edges: Map[Vid, Edge], targets: Map[Vid, Edge]) = {
+          targets.foreach { case (targetVid, targetEdge) => {
+            val propagateEdges = edges.mapValues (edge => {
+              Edge(edge.vendorCode, edge.probability * targetEdge.probability, edge.ts)
+            }).filter { case (vid, props) => vid != targetVid && props.probability > 0.75 }
+            val key = ByteBuffer.wrap(BSPMessage.encodeKey(targetVid))
+            val payload = ByteBuffer.wrap(BSPMessage.encodePayload(((iteration + 1).toByte, propagateEdges)))
+            graphstreamProducer.send(new KeyedMessage("graphstream", key, payload))
+          }}
+        }
       }
 
     }
-  }
-
-  override def awaitingTermination {
-    println(
-      s"=> graphstream(${bspIn.get} - evicted ${bspEvicted.get} + missed ${bspMiss.get} + hit ${bspUpdated.get}) " +
-        s"=> graphstate(${stateIn.get}) " +
-        s"=> state.size = " + localState.size + ", state.memory = " + localState.minSizeInByte / 1024 / 1024 + " Mb"
-    )
-  }
-
-  override def onShutdown: Unit = {
-    graphstreamProducer.close
   }
 
 }
