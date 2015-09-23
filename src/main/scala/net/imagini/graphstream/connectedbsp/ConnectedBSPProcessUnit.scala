@@ -39,8 +39,8 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {
     topic match {
-      case "graphstate" => new FetcherBootstrap(this, topic, partition, groupId) {
 
+      case "graphstate" => new FetcherBootstrap(this, topic, partition, groupId) {
         def handleMessage(messageAndOffset: MessageAndOffset): Unit = {
           localState.put(messageAndOffset.message.key, messageAndOffset.message.payload)
           stateIn.incrementAndGet
@@ -48,8 +48,8 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
       }
 
       case "graphstream" => new FetcherDelta(this, topic, partition, groupId) {
-        val MAX_ITER = 3
-        private val MAX_EDGES = 9
+        val MAX_ITER = 5
+        private val MAX_EDGES = 99
 
         override def handleMessage(envelope: MessageAndOffset): Unit = {
           bspIn.incrementAndGet
@@ -73,11 +73,12 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
                 stateProducer.send(new KeyedMessage("graphstate", key, null))
               } else {
                 val newState = BSPMessage.encodePayload((iteration, newEdges))
-                localState.put(key, newState)
                 if (iteration < MAX_ITER) {
                   propagateEdges(iteration, newEdges, existingEdges)
                   propagateEdges(iteration, existingEdges, newEdges)
                 }
+                localState.put(key, newState)
+                stateProducer.send(new KeyedMessage("graphstate", key, ByteBuffer.wrap(newState)))
               }
             }
           }
