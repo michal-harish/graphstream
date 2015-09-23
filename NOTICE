@@ -4,3 +4,8 @@ This software has been developed at VisualDNA, London
 by contributions of the following authors:
 
     Michal Harish
+
+This software includes libraries developed under LGPL 3.0,
+namely Donut Stream Processing Framework and Yarn1 Library.
+The libraries should be packaged and linked as dependency
+modules before distributing the software.
