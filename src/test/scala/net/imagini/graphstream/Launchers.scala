@@ -3,8 +3,9 @@ package net.imagini.graphstream
 import java.io.FileInputStream
 import java.util.Properties
 
-import net.imagini.graphstream.common.BSPMessage
+
 import net.imagini.graphstream.connectedbsp.ConnectedBSPApplication
+import net.imagini.graphstream.debugging.{GraphStreamPrinter, GraphStatePrinter}
 import net.imagini.graphstream.syncstransform.SyncsToGraphApplication
 import org.apache.donut.KafkaUtils
 
@@ -13,7 +14,8 @@ import org.apache.donut.KafkaUtils
  */
 
 object Config extends Properties {
-  load( new FileInputStream("/etc/vdna/graphstream/config.properties"))
+  val path = "/etc/vdna/graphstream/config.properties"
+  load( new FileInputStream(path))
 }
 
 object ConnectedBSPLocalLauncher extends App {
@@ -33,31 +35,11 @@ object SyncsToGraphYarnLauncher extends App {
 }
 
 object DebugGraphStream extends App {
-  val kafkaUtils = new KafkaUtils(Config)
-  kafkaUtils.createDebugConsumer("graphstream", (msg) => {
-    val vid = BSPMessage.decodeKey(msg.key)
-    val payload = msg.message match {
-      case null => null
-      case x => BSPMessage.decodePayload(x)
-    }
-    if (payload != null && payload._2.size > 0) {
-      println(s"${vid} -> ${payload}")
-    }
-  })
+  GraphStatePrinter.main(Array(Config.path, "2"))
 }
 
 object DebugGraphState extends App {
-  val kafkaUtils = new KafkaUtils(Config)
-  kafkaUtils.createDebugConsumer("graphstate", (msg) => {
-    val vid = BSPMessage.decodeKey(msg.key)
-    val payload = msg.message match {
-      case null => null
-      case x => BSPMessage.decodePayload(x)
-    }
-    if (payload != null && payload._2.size > 1) {
-      print(s"\n${vid} -> ${payload}")
-    }
-  })
+  GraphStreamPrinter.main(Array(Config.path, "2"))
 }
 
 object DebugOffsetReport extends App {
