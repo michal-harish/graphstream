@@ -101,7 +101,7 @@ And then creating topic with compact cleanup policy
 ### Configuring IntelliJ and Maven 
 
 The GraphStream project has a direct source dependencies which are not standard maven pom-declared dependencies
- but are pulled in as git submodules. This way it is possible rapidly develop teh underlying Donut and Yarn1 frameworks
+ but are pulled in as git submodules. This way it is possible rapidly develop the underlying Donut and Yarn1 frameworks
  which are still unstable. 
 
 ```
