@@ -1,5 +1,6 @@
 package net.imagini.graphstream.connectedbsp
 
+import java.io.DataInput
 import java.nio.ByteBuffer
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
@@ -22,7 +23,10 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
   val bspUpdated = new AtomicLong(0)
   val stateIn = new AtomicLong(0)
 
-  private val localState: MemStore = new MemStoreMemDb(1024 * 14, 1000000)//new LocalStorage1(5000000)
+  private val localState: MemStore[Map[Vid, Edge]] = new MemStoreMemDb[Map[Vid, Edge]](
+    1024 * 14, 1000000,
+    ( (value: Map[Vid, Edge]) => BSPMessage.encodePayload((0, value)),
+      (in: DataInput) => BSPMessage.decode(in)._2))
 
   private val graphstreamProducer = kafkaUtils.createSnappyProducer[KafkaRangePartitioner](numAcks = 0, batchSize = 1000)
 
@@ -43,7 +47,10 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
 
       case "graphstate" => new FetcherBootstrap(this, topic, partition, groupId) {
         def handleMessage(messageAndOffset: MessageAndOffset): Unit = {
-          localState.put(messageAndOffset.message.key, messageAndOffset.message.payload)
+          BSPMessage.decode(messageAndOffset.message.payload) match {
+            case null => localState.put(messageAndOffset.message.key, null)
+            case (iteration, edges) => localState.put(messageAndOffset.message.key, edges)
+          }
           stateIn.incrementAndGet
         }
       }
@@ -58,27 +65,26 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
           localState.get(key) match {
             case None => {
               bspMiss.incrementAndGet
-              localState.put(key, envelope.message.payload)
+              localState.put(key, BSPMessage.decode(envelope.message.payload)._2)
               stateProducer.send(new KeyedMessage("graphstate", key, envelope.message.payload))
             }
             case Some(null) => bspEvicted.incrementAndGet
-            case Some(previousState) => {
+            case Some(existingEdges) => {
               bspUpdated.incrementAndGet
               val payload = envelope.message.payload
-              val (iteration, inputEdges) = BSPMessage.decodePayload(payload.array, payload.arrayOffset)
-              val existingEdges = BSPMessage.decodePayload(previousState)._2
+              val (iteration, inputEdges) = BSPMessage.decode(payload)
               val additionalEdges = inputEdges.filter(n => !existingEdges.contains(n._1))
               val newEdges = existingEdges ++ additionalEdges
               if (newEdges.size > MAX_EDGES) {
-                localState.put(key, null.asInstanceOf[Array[Byte]])
+                localState.put(key, null)
                 stateProducer.send(new KeyedMessage("graphstate", key, null))
               } else {
-                val newState = BSPMessage.encodePayload((iteration, newEdges))
                 if (iteration < MAX_ITER) {
                   propagateEdges(iteration, newEdges, existingEdges)
                   propagateEdges(iteration, existingEdges, newEdges)
                 }
-                localState.put(key, newState)
+                localState.put(key, newEdges)
+                val newState = BSPMessage.encodePayload((iteration, newEdges))
                 stateProducer.send(new KeyedMessage("graphstate", key, ByteBuffer.wrap(newState)))
               }
             }

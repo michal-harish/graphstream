@@ -55,10 +55,10 @@ class SyncsToGraphProcessUnit(config: Properties, logicalPartition: Int, totalLo
               idSpaceSet.contains(importMsg.getIdSpace)
             ) {
               counterFiltered.addAndGet(1L)
-              if (!blacklists.blacklist_ua.contains(importMsg.getUserAgent.trim.hashCode)
+              if ((importMsg.getUserAgent == null || !blacklists.blacklist_ua.contains(importMsg.getUserAgent.trim.hashCode))
                 && !blacklists.blacklist_vdna_uuid.contains(importMsg.getUserUid)
                 && !blacklists.blacklist_id.contains(importMsg.getPartnerUserId)
-                && !blacklists.blacklist_ip.contains(importMsg.getClientIp.trim.hashCode)
+                && (importMsg.getClientIp == null || !blacklists.blacklist_ip.contains(importMsg.getClientIp.trim.hashCode))
               ) {
                 counterValid.addAndGet(1L)
                 transformAndProduce(importMsg)

@@ -78,20 +78,20 @@ log.cleaner.enable=true
 ### Creating normal topic with retention
 
 ```bash
-./bin/kafka-topics.sh --create --topic graphstream --partitions 24 --replication-factor 1 --config cleanup.policy=delete
+./bin/kafka-topics.sh --zookeeper <zkaddress> --create --topic graphstream --partitions 24 --replication-factor 1 --config cleanup.policy=delete
 ```
 
 ### Creating a compacted topic
 And then creating topic with compact cleanup policy
 ```bash
-./bin/kafka-topics.sh --create --topic graphstate --partitions 24 --replication-factor 1 --config cleanup.policy=compact
+./bin/kafka-topics.sh --zookeeper <zkaddress> --create --topic graphstate --partitions 24 --replication-factor 1 --config cleanup.policy=compact
 ```
 
 ### Deleting topics
 
 ```bash
-./bin/kafka-topics.sh --delete --topic graphstream
-./bin/kafka-topics.sh --delete --topic graphstate
+./bin/kafka-topics.sh --zookeeper <zkaddress> --delete --topic graphstream
+./bin/kafka-topics.sh --zookeeper <zkaddress> --delete --topic graphstate
 ```
 
 
