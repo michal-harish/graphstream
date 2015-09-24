@@ -32,7 +32,7 @@ class SyncsToGraphProcessUnit(config: Properties, logicalPartition: Int, totalLo
   }
 
   override def awaitingTermination: Unit = {
-    println(s"datasync[${counterReceived.get}] => filter[${counterFiltered.get}] => graphstream[${counterProduced.get}] [invalid ${counterInvalid.get}]")
+    println(s"datasync-VDNAUserImport[${counterReceived.get}] => filter[${counterFiltered.get}] => graphstream[${counterProduced.get}] [invalid ${counterInvalid.get}]")
   }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {

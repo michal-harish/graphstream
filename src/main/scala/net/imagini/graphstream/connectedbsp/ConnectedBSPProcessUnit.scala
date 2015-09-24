@@ -8,6 +8,7 @@ import kafka.message.MessageAndOffset
 import kafka.producer.KeyedMessage
 import net.imagini.graphstream.common.{Edge, Vid, BSPMessage}
 import org.apache.donut._
+import org.apache.donut.memstore.{MemStoreMemDb, MemStore}
 
 /**
  * Created by mharis on 14/09/15.
@@ -21,7 +22,7 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
   val bspUpdated = new AtomicLong(0)
   val stateIn = new AtomicLong(0)
 
-  private val localState = new LocalStorage(5000000)
+  private val localState: MemStore = new MemStoreMemDb(1024 * 14, 1000000)//new LocalStorage1(5000000)
 
   private val graphstreamProducer = kafkaUtils.createSnappyProducer[KafkaRangePartitioner](numAcks = 0, batchSize = 1000)
 
@@ -33,7 +34,7 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
     println(
       s"=> graphstream(${bspIn.get} - evicted ${bspEvicted.get} + missed ${bspMiss.get} + hit ${bspUpdated.get}) " +
         s"=> graphstate(${stateIn.get}) " +
-        s"=> state.size = " + localState.size + ", state.memory = " + localState.minSizeInByte / 1024 / 1024 + " Mb"
+        s"=> state.size = " + localState.size + ", state.memory = " + localState.minSizeInBytes / 1024 / 1024 + " Mb"
     )
   }
 
