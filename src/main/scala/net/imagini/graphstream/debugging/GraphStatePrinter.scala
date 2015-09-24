@@ -19,7 +19,7 @@ object GraphStatePrinter {
       val vid = BSPMessage.decodeKey(msg.key)
       val payload = msg.message match {
         case null => null
-        case x => BSPMessage.decode(x)
+        case x => BSPMessage.decodePayload(x)
       }
       if (payload != null && payload._2.size >= minEdges) {
         println(s"${vid} -> ${payload}")

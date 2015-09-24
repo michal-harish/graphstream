@@ -26,7 +26,7 @@ class BSPMessageTest extends FlatSpec with Matchers {
           0,250 //vendor
     ))
 
-    BSPMessage.decode(bytes) should be((5,edges))
+    BSPMessage.decodePayload(bytes) should be((5,edges))
   }
 
 }
