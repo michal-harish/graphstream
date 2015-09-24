@@ -9,7 +9,7 @@ import kafka.message.MessageAndOffset
 import kafka.producer.KeyedMessage
 import net.imagini.common.message.VDNAUserImport
 import net.imagini.common.messaging.serde.VDNAUniversalDeserializer
-import net.imagini.graphstream.common.{BSPMessage, Edge, Vid}
+import net.imagini.graphstream.common.{BlackLists, BSPMessage, Edge, Vid}
 import org.apache.donut.{FetcherDelta, Fetcher, KafkaRangePartitioner, DonutAppTask}
 
 /**
@@ -22,8 +22,10 @@ class SyncsToGraphProcessUnit(config: Properties, logicalPartition: Int, totalLo
   val counterReceived = new AtomicLong(0)
   val counterInvalid = new AtomicLong(0)
   val counterFiltered = new AtomicLong(0)
+  val counterValid = new AtomicLong(0)
   val counterProduced = new AtomicLong(0)
   val idSpaceSet = Set("a", "r", "d")
+  val blacklists = new BlackLists
 
   val snappyProducer = kafkaUtils.createSnappyProducer[KafkaRangePartitioner](numAcks = 0, batchSize = 500)
 
@@ -32,7 +34,7 @@ class SyncsToGraphProcessUnit(config: Properties, logicalPartition: Int, totalLo
   }
 
   override def awaitingTermination: Unit = {
-    println(s"datasync-VDNAUserImport[${counterReceived.get}] => filter[${counterFiltered.get}] => graphstream[${counterProduced.get}] [invalid ${counterInvalid.get}]")
+    println(s"datasync-VDNAUserImport[${counterReceived.get}] => filter[${counterFiltered.get}] => passed[${counterValid.get}] => graphstream[${counterProduced.get}] [invalid ${counterInvalid.get}]")
   }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {
@@ -50,9 +52,17 @@ class SyncsToGraphProcessUnit(config: Properties, logicalPartition: Int, totalLo
               !importMsg.getUserOptOut &&
               importMsg.getUserUid != null &&
               importMsg.getPartnerUserId != null &&
-              idSpaceSet.contains(importMsg.getIdSpace)) {
+              idSpaceSet.contains(importMsg.getIdSpace)
+            ) {
               counterFiltered.addAndGet(1L)
-              transformAndProduce(importMsg)
+              if (!blacklists.blacklist_ua.contains(importMsg.getUserAgent.trim.hashCode)
+                && !blacklists.blacklist_vdna_uuid.contains(importMsg.getUserUid)
+                && !blacklists.blacklist_id.contains(importMsg.getPartnerUserId)
+                && !blacklists.blacklist_ip.contains(importMsg.getClientIp.trim.hashCode)
+              ) {
+                counterValid.addAndGet(1L)
+                transformAndProduce(importMsg)
+              }
             }
           }
         }
