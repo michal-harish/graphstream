@@ -56,6 +56,11 @@
         </dependency>
         <!-- donut-core is included by source and expects hadoop and kafka to be provided so we specify version we run on our cluster -->
         <dependency>
+            <groupId>org.mapdb</groupId>
+            <artifactId>mapdb</artifactId>
+            <version>2.0-beta7</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-yarn-client</artifactId>
             <version>${hadoop.version}-${cdh.version}</version>
@@ -255,7 +260,24 @@
                     </execution>
                 </executions>
             </plugin>
-
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>compile</phase>
+                        <configuration>
+                            <tasks>
+                                <copy file="${basedir}/target/classes/submit" tofile="${basedir}/submit"/>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
