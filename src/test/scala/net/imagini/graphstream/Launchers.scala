@@ -5,7 +5,7 @@ import java.util.Properties
 
 
 import net.imagini.graphstream.connectedbsp.{ConnectedBSP, ConnectedBSPApplication}
-import net.imagini.graphstream.debugging.{GraphStreamPrinter, GraphStatePrinter}
+import net.imagini.graphstream.debugging.{GraphDeltaPrinter, GraphStatePrinter}
 import net.imagini.graphstream.syncstransform.{SyncsToGraph, SyncsToGraphApplication}
 import org.apache.donut.KafkaUtils
 
@@ -39,7 +39,7 @@ object DebugGraphStream extends App {
 }
 
 object DebugGraphState extends App {
-  GraphStreamPrinter.main(Array(Config.path, "2"))
+  GraphDeltaPrinter.main(Array(Config.path, "2"))
 }
 
 object DebugOffsetReport extends App {
@@ -48,7 +48,7 @@ object DebugOffsetReport extends App {
 
   val inspect = Map(
     ("datasync" -> "GraphSyncsStreamingBSP"),
-    ("graphstream" ->  "GraphStreamingBSP"),
+    ("graphdelta" ->  "GraphStreamingBSP"),
     ("graphstate" -> "GraphStreamingBSP")
   )
   kafkaUtils.getPartitionMap(inspect.keys.toList).foreach { case (topic, numPartitions) => {

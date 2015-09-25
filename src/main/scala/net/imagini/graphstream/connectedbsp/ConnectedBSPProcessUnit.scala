@@ -32,7 +32,7 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
 
   override def awaitingTermination {
     println(
-      s"=> graphstream(${bspIn.get} - evicted ${bspEvicted.get} + missed ${bspMiss.get} + hit ${bspUpdated.get}) " +
+      s"=> graphdelta(${bspIn.get} - evicted ${bspEvicted.get} + missed ${bspMiss.get} + hit ${bspUpdated.get}) " +
         s"=> graphstate(${stateIn.get}) " +
         s"=> state.size = " + localState.size + ", state.memory = " + localState.minSizeInBytes / 1024 / 1024 + " Mb"
     )
@@ -48,7 +48,7 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
         }
       }
 
-      case "graphstream" => new FetcherDelta(this, topic, partition, groupId) {
+      case "graphdelta" => new FetcherDelta(this, topic, partition, groupId) {
         val MAX_ITER = 5
         private val MAX_EDGES = 99
 
@@ -68,18 +68,20 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
               val (iteration, inputEdges) = BSPMessage.decodePayload(payload.array, payload.arrayOffset)
               val existingEdges = BSPMessage.decodePayload(previousState)._2
               val additionalEdges = inputEdges.filter(n => !existingEdges.contains(n._1))
-              val newEdges = existingEdges ++ additionalEdges
-              if (newEdges.size > MAX_EDGES) {
-                localState.put(key, null.asInstanceOf[Array[Byte]])
-                stateProducer.send(new KeyedMessage("graphstate", key, null))
-              } else {
-                val newState = BSPMessage.encodePayload((iteration, newEdges))
-                if (iteration < MAX_ITER) {
-                  propagateEdges(iteration, newEdges, existingEdges)
-                  propagateEdges(iteration, existingEdges, newEdges)
+              if (additionalEdges.size > 0) {
+                val newEdges = existingEdges ++ additionalEdges
+                if (newEdges.size > MAX_EDGES) {
+                  localState.put(key, null.asInstanceOf[Array[Byte]])
+                  stateProducer.send(new KeyedMessage("graphstate", key, null))
+                } else {
+                  val newState = BSPMessage.encodePayload((iteration, newEdges))
+                  if (iteration < MAX_ITER) {
+                    propagateEdges(iteration, newEdges, existingEdges)
+                    propagateEdges(iteration, existingEdges, newEdges)
+                  }
+                  localState.put(key, newState)
+                  stateProducer.send(new KeyedMessage("graphstate", key, ByteBuffer.wrap(newState)))
                 }
-                localState.put(key, newState)
-                stateProducer.send(new KeyedMessage("graphstate", key, ByteBuffer.wrap(newState)))
               }
             }
           }
@@ -98,7 +100,7 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
             }).filter { case (vid, props) => vid != targetVid && props.probability > 0.75 }
             val key = ByteBuffer.wrap(BSPMessage.encodeKey(targetVid))
             val payload = ByteBuffer.wrap(BSPMessage.encodePayload(((iteration + 1).toByte, propagateEdges)))
-            graphstreamProducer.send(new KeyedMessage("graphstream", key, payload))
+            graphstreamProducer.send(new KeyedMessage("graphdelta", key, payload))
           }}
         }
       }

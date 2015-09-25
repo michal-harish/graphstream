@@ -15,11 +15,11 @@ object BSPMessage {
     val result = ByteBuffer.allocate(len)
     result.put(iter)
     result.putShort(edges.size.toShort)
-    edges.foreach { case (k, v) => {
-      result.putLong(v.ts)
-      result.put(k.bytes.length.toByte)
-      result.put(k.bytes)
-      result.put(v.bytes)
+    edges.foreach { case (vid, edge) => {
+      result.putLong(edge.ts)
+      result.put(vid.bytes.length.toByte)
+      result.put(vid.bytes)
+      result.put(edge.bytes)
     }
     }
     result.array

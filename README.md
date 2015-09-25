@@ -18,8 +18,8 @@
 
 The GraphStream Pipeline consists of 2 components:
 
-1. **SyncsToGraph** - this is a simple transformation of `datasync` topic to `graphstream` delta topic - syncs are filtered and for each sync that passes two respective BSPMessage(s) are sent representing edge and reverse edge of the connection.
-2. **ConnectedBSP** - this is a recursive operator which consumes (and recursively produces into) `graphstream` delta topic as well as publishes the new state into the `graphstate` commit log topic.
+1. **SyncsToGraph** - this is a simple transformation of `datasync` topic to `graphdelta` topic - syncs are filtered and for each sync that passes two respective BSPMessage(s) are sent representing edge and reverse edge of the connection.
+2. **ConnectedBSP** - this is a recursive operator which consumes (and recursively produces into) `graphdelta` delta topic as well as publishes the new state into the `graphstate` commit log topic.
 
 ![hello](doc/GraphStream_architecture.png)
 
@@ -78,20 +78,20 @@ log.cleaner.enable=true
 ### Creating normal topic with retention
 
 ```bash
-./bin/kafka-topics.sh --create --topic graphstream --partitions 24 --replication-factor 1 --config cleanup.policy=delete
+./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 1 --config cleanup.policy=delete
 ```
 
 ### Creating a compacted topic
 And then creating topic with compact cleanup policy
 ```bash
-./bin/kafka-topics.sh --create --topic graphstate --partitions 24 --replication-factor 1 --config cleanup.policy=compact
+./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphstate --partitions 32 --replication-factor 1 --config cleanup.policy=compact
 ```
 
 ### Deleting topics
 
 ```bash
-./bin/kafka-topics.sh --delete --topic graphstream
-./bin/kafka-topics.sh --delete --topic graphstate
+./bin/kafka-topics.sh --zookeeper <zkconnect> --delete --topic graphdelta
+./bin/kafka-topics.sh --zookeeper <zkconnect> --delete --topic graphstate
 ```
 
 

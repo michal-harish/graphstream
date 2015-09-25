@@ -55,10 +55,10 @@ class SyncsToGraphProcessUnit(config: Properties, logicalPartition: Int, totalLo
               idSpaceSet.contains(importMsg.getIdSpace)
             ) {
               counterFiltered.addAndGet(1L)
-              if (!blacklists.blacklist_ua.contains(importMsg.getUserAgent.trim.hashCode)
+              if ((importMsg.getUserAgent == null || !blacklists.blacklist_ua.contains(importMsg.getUserAgent.trim.hashCode))
                 && !blacklists.blacklist_vdna_uuid.contains(importMsg.getUserUid)
                 && !blacklists.blacklist_id.contains(importMsg.getPartnerUserId)
-                && !blacklists.blacklist_ip.contains(importMsg.getClientIp.trim.hashCode)
+                && (importMsg.getClientIp == null || !blacklists.blacklist_ip.contains(importMsg.getClientIp.trim.hashCode))
               ) {
                 counterValid.addAndGet(1L)
                 transformAndProduce(importMsg)
@@ -77,11 +77,11 @@ class SyncsToGraphProcessUnit(config: Properties, logicalPartition: Int, totalLo
       val edge = Edge("AAT", 1.0, importMsg.getTimestamp)
       snappyProducer.send(
         new KeyedMessage(
-          "graphstream",
+          "graphdelta",
             ByteBuffer.wrap(BSPMessage.encodeKey(vdnaId)),
             ByteBuffer.wrap(BSPMessage.encodePayload((1, Map(partnerId -> edge))))),
         new KeyedMessage(
-          "graphstream",
+          "graphdelta",
             ByteBuffer.wrap(BSPMessage.encodeKey(partnerId)),
             ByteBuffer.wrap(BSPMessage.encodePayload((1, Map(vdnaId -> edge)))))
       )

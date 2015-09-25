@@ -19,7 +19,7 @@ import org.apache.donut.DonutApp
 class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPProcessUnit]({
   config.setProperty("yarn1.keepContainers", "true")
   config.setProperty("kafka.group.id", "GraphStreamingBSP")
-  config.setProperty("kafka.topics", "graphstream,graphstate")
+  config.setProperty("kafka.topics", "graphdelta,graphstate")
   config.setProperty("kafka.cogroup", "true")
   config
 })
