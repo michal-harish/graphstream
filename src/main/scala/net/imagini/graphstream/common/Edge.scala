@@ -20,7 +20,13 @@ class Edge(val bytes: Array[Byte], val vendorCode: Short, val ts: Long) extends 
 
   override def hashCode = ByteUtils.asIntValue(bytes)
 
-  override def equals(other: Any) = other != null && other.isInstanceOf[Edge] && ByteUtils.equals(bytes, other.asInstanceOf[Edge].bytes)
+  /**
+   * equals doesn't consider the timestamp, only version, vendor and
+   */
+  override def equals(other: Any) =
+    other != null &&
+      other.isInstanceOf[Edge] &&
+      ByteUtils.equals(bytes, other.asInstanceOf[Edge].bytes)
 }
 
 
@@ -64,15 +70,15 @@ object Edge extends java.io.Serializable {
   def apply(vendor: String, probability: Double): Edge = apply(vendor, probability, Long.MaxValue)
 
   def applyVersion(bytes: Array[Byte], ts: Long): Edge = {
-    if (bytes.length != 4 || bytes(0) != CURRENT_VERSION) {
-      apply(Edge.VENDOR_CODE_UNKNOWN, 255.toByte, ts)
-    } else {
+    if (bytes.length == 4 && bytes(0) == CURRENT_VERSION) {
       val vendorCodeParsed: Short = (((bytes(2).toShort & 0xff) << 8) + ((bytes(3).toShort & 0xff) << 0)).toShort
       if (vendors.contains(vendorCodeParsed)) {
         new Edge(bytes, vendorCodeParsed, ts)
       } else {
         apply(Edge.VENDOR_CODE_UNKNOWN, bytes(1), ts)
       }
+    } else {
+      apply(Edge.VENDOR_CODE_UNKNOWN, 255.toByte, ts)
     }
   }
 

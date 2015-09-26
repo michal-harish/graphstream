@@ -22,7 +22,7 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
   val bspUpdated = new AtomicLong(0)
   val stateIn = new AtomicLong(0)
 
-  private val localState: MemStore = new MemStoreMemDb(1024 * 14, 1000000)//new LocalStorage1(5000000)
+  private val localState: MemStore = new MemStoreMemDb(maxSizeInMb = 1024 * 14)
 
   private val graphstreamProducer = kafkaUtils.createSnappyProducer[KafkaRangePartitioner](numAcks = 0, batchSize = 1000)
 
@@ -67,12 +67,15 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
               val payload = envelope.message.payload
               val (iteration, inputEdges) = BSPMessage.decodePayload(payload.array, payload.arrayOffset)
               val existingEdges = BSPMessage.decodePayload(previousState)._2
-              val additionalEdges = inputEdges.filter(n => !existingEdges.contains(n._1))
+              val additionalEdges = inputEdges.filter { case (inDest, inProps)  => !existingEdges.exists {
+                case(exDest, exProps) => exDest == inDest && exProps.probability >= inProps.probability
+              }}
               if (additionalEdges.size > 0) {
                 val newEdges = existingEdges ++ additionalEdges
                 if (newEdges.size > MAX_EDGES) {
                   localState.put(key, null.asInstanceOf[Array[Byte]])
                   stateProducer.send(new KeyedMessage("graphstate", key, null))
+                  //TODO send to all existing edges P=0.0@key to be removed
                 } else {
                   val newState = BSPMessage.encodePayload((iteration, newEdges))
                   if (iteration < MAX_ITER) {
