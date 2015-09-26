@@ -158,5 +158,6 @@ There are two components(see [architecture](#architecture) above) and each has 2
 
 ### TODOs
 
-- Zero copy transitions Kafka Input -> State -> Kafka Output
+- Make handlers unit-testable (before the zero-copy work)
+- Zero copy transitions Kafka Input -> State -> Kafka Output (also currently ByteBuffer.array is used but some buffers may be direct)
 - Edges should not be represented as Map[Vid, EdgeProps] but rather Set[Edge] where Edge object would contain the dest Vid to allow for duplicate connections with different properties 
