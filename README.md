@@ -158,5 +158,5 @@ There are two components(see [architecture](#architecture) above) and each has 2
 
 ### TODOs
 
+- Zero copy transitions Kafka Input -> State -> Kafka Output
 - Edges should not be represented as Map[Vid, EdgeProps] but rather Set[Edge] where Edge object would contain the dest Vid to allow for duplicate connections with different properties 
-- In the recursive example graphstream emit null messages to clear the connections on eviction

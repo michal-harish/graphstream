@@ -1,6 +1,7 @@
 package net.imagini.graphstream.connectedbsp
 
 import java.nio.ByteBuffer
+import java.util
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
 
@@ -67,24 +68,30 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
               val payload = envelope.message.payload
               val (iteration, inputEdges) = BSPMessage.decodePayload(payload.array, payload.arrayOffset)
               val existingEdges = BSPMessage.decodePayload(previousState)._2
-              val additionalEdges = inputEdges.filter { case (inDest, inProps)  => !existingEdges.exists {
-                case(exDest, exProps) => exDest == inDest && exProps.probability >= inProps.probability
-              }}
-              if (additionalEdges.size > 0) {
-                val newEdges = existingEdges ++ additionalEdges
-                if (newEdges.size > MAX_EDGES) {
-                  localState.put(key, null.asInstanceOf[Array[Byte]])
-                  stateProducer.send(new KeyedMessage("graphstate", key, null))
-                  //TODO send to all existing edges P=0.0@key to be removed
-                } else {
-                  val newState = BSPMessage.encodePayload((iteration, newEdges))
-                  if (iteration < MAX_ITER) {
-                    propagateEdges(iteration, newEdges, existingEdges)
-                    propagateEdges(iteration, existingEdges, newEdges)
-                  }
-                  localState.put(key, newState)
-                  stateProducer.send(new KeyedMessage("graphstate", key, ByteBuffer.wrap(newState)))
+
+              val evictedEdges = inputEdges.filter{
+                case (inDest, inProps) => inProps.probability == 0 && existingEdges.contains(inDest)}.map(_._1)
+
+              val additionalEdges = inputEdges.filter {
+                case (inDest, inProps) => inProps.probability > 0 && !existingEdges.exists {
+                  case (exDest, exProps) => exDest == inDest && exProps.probability >= inProps.probability}}
+
+              val newEdges = existingEdges ++ additionalEdges -- evictedEdges
+              if (newEdges.size > MAX_EDGES) {
+                //evict offending key and remove all the edges pointing to it
+                localState.put(key, null.asInstanceOf[Array[Byte]])
+                stateProducer.send(new KeyedMessage("graphstate", key, null))
+                val evictDest = Vid(util.Arrays.copyOfRange(key.array, key.arrayOffset, key.arrayOffset + key.remaining))
+                val evictEdge = Edge("", 0.0, System.currentTimeMillis)
+                propagateEdges(iteration, Map(evictDest -> evictEdge), existingEdges)
+              } else if (additionalEdges.size > 0 || evictedEdges.size >0) {
+                val newState = BSPMessage.encodePayload((iteration, newEdges))
+                if (iteration < MAX_ITER && additionalEdges.size > 0) {
+                  propagateEdges(iteration, newEdges, existingEdges)
+                  propagateEdges(iteration, existingEdges, newEdges)
                 }
+                localState.put(key, newState)
+                stateProducer.send(new KeyedMessage("graphstate", key, ByteBuffer.wrap(newState)))
               }
             }
           }
@@ -93,18 +100,19 @@ class ConnectedBSPProcessUnit(config: Properties, logicalPartition: Int, totalLo
         /**
          * Propagate edges to each of the targets if the probability doesn't fall below 0.75 in the process.
          * @param edges
-         * @param targets
+         * @param dest
          * @return
          */
-        private def propagateEdges(iteration: Int, edges: Map[Vid, Edge], targets: Map[Vid, Edge]) = {
-          targets.foreach { case (targetVid, targetEdge) => {
-            val propagateEdges = edges.mapValues (edge => {
-              Edge(edge.vendorCode, edge.probability * targetEdge.probability, edge.ts)
-            }).filter { case (vid, props) => vid != targetVid && props.probability > 0.75 }
-            val key = ByteBuffer.wrap(BSPMessage.encodeKey(targetVid))
+        private def propagateEdges(iteration: Int, edges: Map[Vid, Edge], dest: Map[Vid, Edge]) = {
+          dest.foreach { case (destVid, destEdge) => {
+            val propagateEdges = edges.mapValues(edge => {
+              Edge(edge.vendorCode, edge.probability * destEdge.probability, edge.ts)
+            }).filter { case (vid, props) => vid != destVid && props.probability > 0.75 }
+            val destKey = ByteBuffer.wrap(BSPMessage.encodeKey(destVid))
             val payload = ByteBuffer.wrap(BSPMessage.encodePayload(((iteration + 1).toByte, propagateEdges)))
-            graphstreamProducer.send(new KeyedMessage("graphdelta", key, payload))
-          }}
+            graphstreamProducer.send(new KeyedMessage("graphdelta", destKey, payload))
+          }
+          }
         }
       }
 
