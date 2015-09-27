@@ -16,7 +16,7 @@ import org.apache.donut.DonutApp
  * The input is amplified by recursive consulation of State and production of secondary delta messages.
  */
 
-class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPProcessUnit]({
+class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPProcessingUnit]({
   config.setProperty("yarn1.keepContainers", "true")
   config.setProperty("kafka.group.id", "GraphStreamingBSP")
   config.setProperty("kafka.topics", "graphdelta,graphstate")

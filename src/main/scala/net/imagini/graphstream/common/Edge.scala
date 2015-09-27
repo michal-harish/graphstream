@@ -26,6 +26,7 @@ class Edge(val bytes: Array[Byte], val vendorCode: Short, val ts: Long) extends 
   override def equals(other: Any) =
     other != null &&
       other.isInstanceOf[Edge] &&
+      other.asInstanceOf[Edge].ts == ts &&
       ByteUtils.equals(bytes, other.asInstanceOf[Edge].bytes)
 }
 

@@ -12,7 +12,7 @@ import org.apache.donut.DonutApp
  * to a pair of messages representing a delta edge and reverse edge between the IDs into 'graphstream' topic.
  */
 
-class SyncsToGraphApplication(config: Properties) extends DonutApp[SyncsToGraphProcessUnit]({
+class SyncsToGraphApplication(config: Properties) extends DonutApp[SyncsToGraphProcessingUnit]({
   config.setProperty("yarn1.keepContainers", "true")
   config.setProperty("kafka.group.id", "GraphSyncsStreamingBSP")
   config.setProperty("kafka.topics", "datasync")

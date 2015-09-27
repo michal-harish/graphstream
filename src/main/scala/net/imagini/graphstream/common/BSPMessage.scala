@@ -1,6 +1,7 @@
 package net.imagini.graphstream.common
 
 import java.nio.ByteBuffer
+import java.util
 
 /**
  * Created by mharis on 10/09/15.
@@ -25,7 +26,14 @@ object BSPMessage {
     result.array
   }
 
+  def decodeKey(key: ByteBuffer): Vid = {
+    decodeKey(util.Arrays.copyOfRange(key.array, key.arrayOffset, key.arrayOffset + key.remaining))
+  }
   def decodeKey(key: Array[Byte]): Vid = Vid(key)
+
+  def decodePayload(payload: ByteBuffer): (Byte, Map[Vid, Edge]) = {
+    decodePayload(util.Arrays.copyOfRange(payload.array, payload.arrayOffset, payload.arrayOffset + payload.remaining))
+  }
   def decodePayload(bytes: Array[Byte]): (Byte, Map[Vid, Edge]) = decodePayload(bytes, 0)
   def decodePayload(bytes: Array[Byte], offset: Int): (Byte, Map[Vid, Edge]) = {
     val payload = ByteBuffer.wrap(bytes, offset, bytes.length - offset)

@@ -15,7 +15,7 @@ import org.apache.donut.{FetcherDelta, Fetcher, KafkaRangePartitioner, DonutAppT
 /**
  * Created by mharis on 15/09/15.
  */
-class SyncsToGraphProcessUnit(config: Properties, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
+class SyncsToGraphProcessingUnit(config: Properties, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
   extends DonutAppTask(config, logicalPartition, totalLogicalPartitions, topics) {
 
   val vdnaMessageDecoder = new VDNAUniversalDeserializer
