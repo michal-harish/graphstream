@@ -12,7 +12,7 @@ import org.apache.donut.memstore.{MemStore, MemStoreMemDb}
  *
  * ConnectedBSPProcessor - this processor is contains the logic of the streaming bsp algorithm and is completely
  * isolated from the consumer and producer streams by returning set of messages that are testable without any
- * connections or bootstrap state
+ * connections or bootstrap state.
  */
 class ConnectedBSPProcessor(maxStateSizeMb: Int) {
 
@@ -64,7 +64,7 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int) {
         if (newState.size > MAX_EDGES) {
           //evict offending key and remove all the edges pointing to it
           val evictDest = BSPMessage.decodeKey(key)
-          val evictEdge = Edge("", 0.0, System.currentTimeMillis)
+          val evictEdge = Edge(Edge.VENDOR_CODE_UNKNOWN, 0.0, System.currentTimeMillis)
           output ++= propagateEdges(iteration, Map(evictDest -> evictEdge), existingEdges)
           output += updateState(key, null.asInstanceOf[ByteBuffer])
         } else if (additionalEdges.size > 0 || evictedEdges.size >0) {

@@ -78,6 +78,10 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
     state.get(r).get should be(Map(a1 -> aatEdge(0.9, 1), a2 -> aatEdge(0.5, 2)))
   }
 
+  //TODO test another layer of connection added on top of the ones above
+
+  //TODO test larger volume behaviour with eviction
+
   private def processRecursively(key: ByteBuffer, payload: ByteBuffer): List[KeyedMessage[ByteBuffer, ByteBuffer]] = {
     val output = processor.processDeltaInput(key, payload)
     output ++ output.filter(_.topic == "graphdelta").flatMap(message => {
