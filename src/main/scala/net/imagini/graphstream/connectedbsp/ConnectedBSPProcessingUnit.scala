@@ -35,7 +35,9 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
 
       case "graphstate" => new FetcherBootstrap(this, topic, partition, groupId) {
         def handleMessage(messageAndOffset: MessageAndOffset): Unit = {
-          processor.bootState(messageAndOffset.message.key, messageAndOffset.message.payload)
+          if (!isBooted) {
+            processor.bootState(messageAndOffset.message.key, messageAndOffset.message.payload)
+          }
         }
       }
 
