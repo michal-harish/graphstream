@@ -6,6 +6,7 @@ import java.util.Properties
 import net.imagini.dxp.graphstream.connectedbsp.{ConnectedBSP, ConnectedBSPApplication}
 import net.imagini.dxp.graphstream.debugging.{GraphDeltaPrinter, GraphStatePrinter}
 import net.imagini.dxp.graphstream.ingest.{SyncsToGraph, SyncsToGraphApplication}
+import net.imagini.dxp.graphstream.output.{GraphToHBase, GraphToHBaseApplication}
 import org.apache.donut.KafkaUtils
 
 /**
@@ -32,6 +33,15 @@ object SyncsToGraphLocalLauncher extends App {
 object SyncsToGraphYarnLauncher extends App {
   SyncsToGraph.main(Array(Config.path, "wait"))
 }
+
+object GraphToHBaseLocalLauncher extends App {
+  new GraphToHBaseApplication(Config).runLocally(multiThreadMode = false)
+}
+
+object GraphToHBaseYarnLauncher extends App {
+  GraphToHBase.main(Array(Config.path, "wait"))
+}
+
 
 object DebugGraphStream extends App {
   GraphStatePrinter.main(Array(Config.path, "2"))

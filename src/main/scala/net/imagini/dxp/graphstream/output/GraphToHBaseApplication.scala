@@ -10,7 +10,9 @@ import org.apache.donut.DonutApp
 class GraphToHBaseApplication(config: Properties) extends DonutApp[GraphToHBaseProcessingUnit]({
   config.setProperty("yarn1.keepContainers", "true")
   config.setProperty("kafka.group.id", "GraphstreamHBaseLoader")
-  config.setProperty("kafka.topics", "graphstate")
+  config.setProperty("kafka.topics", "graphdelta")
   config.setProperty("kafka.cogroup", "false")
+  config.setProperty("hbase.table", "dxp-graph-v6")
+
   config
 })
