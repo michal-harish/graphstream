@@ -1,4 +1,4 @@
-package net.imagini.graphstream.syncstransform
+package net.imagini.dxp.graphstream.ingest
 
 import java.io.FileInputStream
 import java.util.Properties
@@ -8,7 +8,7 @@ import java.util.Properties
  *
  * This class is for submitting the job with `./submit` script, e.g.:
  *
- * ./submit net.imagini.graphstream.syncstransform.SyncsToGraph /etc/vdna/graphstream/config.properties
+ * ./submit net.imagini.dxp.graphstream.ingest.SyncsToGraph /etc/vdna/graphstream/config.properties
  */
 object SyncsToGraph {
   def main(args: Array[String]) = {

@@ -1,4 +1,4 @@
-package net.imagini.graphstream.connectedbsp
+package net.imagini.dxp.graphstream.connectedbsp
 
 import java.util.Properties
 

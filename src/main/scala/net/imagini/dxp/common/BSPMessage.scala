@@ -1,4 +1,4 @@
-package net.imagini.graphstream.common
+package net.imagini.dxp.common
 
 import java.nio.ByteBuffer
 import java.util
@@ -52,4 +52,3 @@ object BSPMessage {
   }
 
 }
-

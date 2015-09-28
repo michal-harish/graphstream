@@ -1,4 +1,4 @@
-package net.imagini.graphstream.syncstransform
+package net.imagini.dxp.graphstream.ingest
 
 import java.nio.ByteBuffer
 import java.util
@@ -9,7 +9,7 @@ import kafka.message.MessageAndOffset
 import kafka.producer.KeyedMessage
 import net.imagini.common.message.VDNAUserImport
 import net.imagini.common.messaging.serde.VDNAUniversalDeserializer
-import net.imagini.graphstream.common.{BlackLists, BSPMessage, Edge, Vid}
+import net.imagini.dxp.common.{Vid, Edge, BSPMessage, BlackLists}
 import org.apache.donut.{FetcherDelta, Fetcher, KafkaRangePartitioner, DonutAppTask}
 
 /**

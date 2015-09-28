@@ -1,12 +1,11 @@
-package net.imagini.graphstream
+package net.imagini.dxp.graphstream
 
 import java.io.FileInputStream
 import java.util.Properties
 
-
-import net.imagini.graphstream.connectedbsp.{ConnectedBSP, ConnectedBSPApplication}
-import net.imagini.graphstream.debugging.{GraphDeltaPrinter, GraphStatePrinter}
-import net.imagini.graphstream.syncstransform.{SyncsToGraph, SyncsToGraphApplication}
+import net.imagini.dxp.graphstream.connectedbsp.{ConnectedBSP, ConnectedBSPApplication}
+import net.imagini.dxp.graphstream.debugging.{GraphDeltaPrinter, GraphStatePrinter}
+import net.imagini.dxp.graphstream.ingest.{SyncsToGraph, SyncsToGraphApplication}
 import org.apache.donut.KafkaUtils
 
 /**

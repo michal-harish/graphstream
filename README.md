@@ -59,13 +59,13 @@ mvn clean package
 The maven command above will generate an assembly jar for all components: `targets/SyncsToGraph-0.9.jar` and a `./submit` which can be used as follows:  
 
 ```
-./submit net.imagini.graphstream.connectedbsp.ConnectedBSP /etc/vdna/graphstream/config.properties
+./submit net.imagini.dxp.graphstream.connectedbsp.ConnectedBSP /etc/vdna/graphstream/config.properties
 ```
 
 OR
 
 ```
-./submit net.imagini.graphstream.syncstransform.SyncsToGraph /etc/vdna/graphstream/config.properties
+./submit net.imagini.dxp.graphstream.ingest.SyncsToGraph /etc/vdna/graphstream/config.properties
 ```
 
 ### Brokers configuration
@@ -149,7 +149,7 @@ By default, IntelliJ should preserve these added folders on re-import but in cas
 
 ### Launching the application from IntelliJ
 
-For launching the application from within the IntelliJ runtime there are several starting points all which are located in the *test* source net.imagini.graphstream.Launchers.scala.
+For launching the application from within the IntelliJ runtime there are several starting points all which are located in the *test* source net.imagini.dxp.graphstream.Launchers.scala.
 The reason for test package is that many dependencies are provided and not available without hadoop/yarn environment but provided scope is available in the maven test phase:
 There are two components(see [architecture](#architecture) above) and each has 2 different launchers:
 
@@ -158,6 +158,8 @@ There are two components(see [architecture](#architecture) above) and each has 2
 
 ### TODOs
 
+- net.imagini.dxp.graphstream.ingest.CrosswiseToGraph
+- net.imagini.dxp.graphstream.output.GraphToHBase
 - Zero copy transitions Kafka Input -> State -> Kafka Output (also currently ByteBuffer.array is used but some buffers may be direct)
 - Edges should not be represented as Map[Vid, EdgeProps] but rather Set[Edge] where Edge object would contain the dest Vid to allow for duplicate connections with different properties 
 - SyncsToGraph could have a state for short window for per-cookie counters to detected robots  

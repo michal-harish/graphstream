@@ -1,4 +1,4 @@
-package net.imagini.graphstream.connectedbsp
+package net.imagini.dxp.graphstream.connectedbsp
 
 import java.io.FileInputStream
 import java.util.Properties
@@ -8,7 +8,7 @@ import java.util.Properties
  *
  * This class is for submitting the job with `./submit` script, e.g.:
  *
- * ./submit net.imagini.graphstream.connectedbsp.ConnectedBSP /etc/vdna/graphstream/config.properties
+ * ./submit net.imagini.dxp.graphstream.connectedbsp.ConnectedBSP /etc/vdna/graphstream/config.properties
  */
 object ConnectedBSP {
   def main(args: Array[String]) = {

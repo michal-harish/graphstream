@@ -1,10 +1,10 @@
-package net.imagini.graphstream.connectedbsp
+package net.imagini.dxp.graphstream.connectedbsp
 
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicLong
 
 import kafka.producer.KeyedMessage
-import net.imagini.graphstream.common.{BSPMessage, Edge, Vid}
+import net.imagini.dxp.common.{Vid, Edge, BSPMessage}
 import org.apache.donut.memstore.{MemStore, MemStoreMemDb}
 
 /**

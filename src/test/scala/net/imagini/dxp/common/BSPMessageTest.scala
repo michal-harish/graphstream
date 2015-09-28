@@ -1,4 +1,4 @@
-package net.imagini.graphstream.common
+package net.imagini.dxp.common
 
 import org.scalatest.{FlatSpec, Matchers}
 

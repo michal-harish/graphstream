@@ -1,4 +1,4 @@
-package net.imagini.graphstream.syncstransform
+package net.imagini.dxp.graphstream.ingest
 
 import java.util.Properties
 
