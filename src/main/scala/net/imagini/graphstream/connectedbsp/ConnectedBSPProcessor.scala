@@ -14,7 +14,7 @@ import org.apache.donut.memstore.{MemStore, MemStoreMemDb}
  * isolated from the consumer and producer streams by returning set of messages that are testable without any
  * connections or bootstrap state.
  */
-class ConnectedBSPProcessor(maxStateSizeMb: Int) {
+class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
 
   type MESSAGE = KeyedMessage[ByteBuffer, ByteBuffer]
   val MAX_ITERATIONS = 5
@@ -90,7 +90,7 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int) {
     dest.flatMap { case (destVid, destEdge) => {
       val propagateEdges = edges.mapValues(edge => {
         Edge(edge.vendorCode, edge.probability * destEdge.probability, math.max(destEdge.ts, edge.ts))
-      }).filter { case (vid, props) => vid != destVid}// && props.probability > 0.75 }
+      }).filter { case (vid, props) => vid != destVid && props.probability >= minEdgeProbability }
       if (propagateEdges.size == 0) {
         Seq()
       } else {
