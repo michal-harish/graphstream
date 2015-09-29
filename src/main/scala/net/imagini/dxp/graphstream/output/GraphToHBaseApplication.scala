@@ -7,8 +7,8 @@ import org.apache.donut.DonutApp
 /**
  * Created by mharis on 28/09/15.
  */
-class GraphToHBaseApplication(config: Properties) extends DonutApp[GraphToHBaseProcessingUnitV2]({
-  config.setProperty("yarn1.keepContainers", "false") //TODO true
+class GraphToHBaseApplication(config: Properties) extends DonutApp[GraphToHBaseProcessingUnit]({
+  config.setProperty("yarn1.keepContainers", "true")
   config.setProperty("kafka.group.id", "GraphstreamHBaseLoader")
   config.setProperty("kafka.topics", "graphdelta")
   config.setProperty("kafka.cogroup", "false")

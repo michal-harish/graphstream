@@ -2,6 +2,7 @@ package net.imagini.dxp.graphstream.output
 
 import java.io.IOException
 import java.util.Properties
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.{Semaphore, ConcurrentHashMap}
 
 import kafka.message.MessageAndOffset
@@ -21,13 +22,13 @@ import org.slf4j.LoggerFactory
  * to the number of fetchers which all can proceed until the compaction thread kicks in and acquires the total number
  * and turns 'red'.
  */
-class GraphToHBaseProcessingUnitV2(config: Properties, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
+class GraphToHBaseProcessingUnit(config: Properties, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
   extends DonutAppTask(config, logicalPartition, totalLogicalPartitions, topics) {
 
-  private val log = LoggerFactory.getLogger(classOf[GraphToHBaseProcessingUnitV2])
+  private val log = LoggerFactory.getLogger(classOf[GraphToHBaseProcessingUnit])
 
   val MIN_COMPACTION_SIZE = 1000
-  val MAX_COMPACTION_SLEEP_TIME_MS = 5000L
+  val MAX_COMPACTION_SLEEP_TIME_MS = 1000L
   val MAX_NUM_HBASE_RETRIES = 5
 
   val hbaConf: Configuration = HBaseConfiguration.create()
@@ -43,7 +44,11 @@ class GraphToHBaseProcessingUnitV2(config: Properties, logicalPartition: Int, to
 
   private val compactedQueue = new ConcurrentHashMap[Vid, Map[Vid, Edge]]
 
-  private var mutationCounter = 0L
+  private val deltaCounter = new AtomicLong(0)
+
+  private val deleteCounter = new AtomicLong(0)
+
+  private val putCounter = new AtomicLong(0)
 
   private var connection: Connection = null
 
@@ -54,7 +59,7 @@ class GraphToHBaseProcessingUnitV2(config: Properties, logicalPartition: Int, to
   private val tableNameAsString = config.getProperty("hbase.table")
 
   override protected def awaitingTermination: Unit = {
-    println(s"TOTAL MUTATIONS IN TABLE `${tableNameAsString}` = ${mutationCounter}")
+    println(s"graphdelta(${deltaCounter.get}) => MUTATIONS IN TABLE `${tableNameAsString}`: PUT = ${putCounter.get}, DELETE = ${deleteCounter.get}")
   }
 
   override protected def onShutdown: Unit = {
@@ -71,6 +76,7 @@ class GraphToHBaseProcessingUnitV2(config: Properties, logicalPartition: Int, to
         override protected def handleMessage(messageAndOffset: MessageAndOffset): Unit = {
           val key = BSPMessage.decodeKey(messageAndOffset.message.key)
           val payload = messageAndOffset.message.payload
+          deltaCounter.incrementAndGet
           compactionSemaphore.acquire(1)
           try {
             if (loaderThread == null) {
@@ -89,11 +95,6 @@ class GraphToHBaseProcessingUnitV2(config: Properties, logicalPartition: Int, to
                   compactedQueue.put(key, previousEdges ++ addedEdges)
                 }
               }
-            }
-          } catch {
-            case e: Throwable => {
-              log.error("HELLO", e)
-              Thread.sleep(100000)
             }
           } finally {
             compactionSemaphore.release(1)
@@ -133,7 +134,6 @@ class GraphToHBaseProcessingUnitV2(config: Properties, logicalPartition: Int, to
                     delete.addFamily(Bytes.toBytes("N"))
                   } else {
                     if (edges.size > 0) {
-                      put = new Put(key.bytes)
                       edges.foreach { case (destVid, destEdge) => {
                         if (destEdge.probability == 0) {
                           if (delete == null) {
@@ -141,20 +141,26 @@ class GraphToHBaseProcessingUnitV2(config: Properties, logicalPartition: Int, to
                           }
                           delete.addColumn(Bytes.toBytes("N"), destVid.bytes)
                         } else {
+                          if (put == null) {
+                            put = new Put(key.bytes)
+                          }
                           put.addColumn(Bytes.toBytes("N"), destVid.bytes, destEdge.ts, destEdge.bytes)
                         }
                       }
                       }
                     }
                   }
-                  if (delete != null) {
-                    //TODO table.mutate(delete)
+                  if (delete != null && !delete.isEmpty) {
+                    deleteCounter.addAndGet(delete.size)
+                    table.mutate(delete)
                   }
-                  if (put != null) {
-                    //TODO table.mutate(put)
+                  if (put != null && !put.isEmpty) {
+                    putCounter.addAndGet(put.size)
+                    table.mutate(put)
                   }
                 }
-                mutationCounter += compactedQueue.size
+                table.flush
+
                 compactedQueue.clear
               } catch {
                 case e: IOException => {
@@ -162,7 +168,7 @@ class GraphToHBaseProcessingUnitV2(config: Properties, logicalPartition: Int, to
                   numErrors += 1
                   log.warn(s"HBase mutation retry: ${numErrors}, mutation size = ${compactedQueue.size}", e)
                   if (numErrors >= MAX_NUM_HBASE_RETRIES) {
-                    handleError(e)
+                    propagateException(e)
                     return
                   }
                 }

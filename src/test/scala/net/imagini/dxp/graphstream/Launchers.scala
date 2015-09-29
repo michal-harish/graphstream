@@ -31,7 +31,7 @@ object SyncsToGraphLocalLauncher extends App {
 }
 
 object SyncsToGraphYarnLauncher extends App {
-  SyncsToGraph.main(Array(Config.path, "wait"))
+  SyncsToGraph.main(Array("4", Config.path, "wait"))
 }
 
 object GraphToHBaseLocalLauncher extends App {
@@ -39,7 +39,7 @@ object GraphToHBaseLocalLauncher extends App {
 }
 
 object GraphToHBaseYarnLauncher extends App {
-  GraphToHBase.main(Array(Config.path, "wait"))
+  GraphToHBase.main(Array("8", Config.path, "wait"))
 }
 
 

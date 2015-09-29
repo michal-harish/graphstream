@@ -90,7 +90,7 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
     dest.flatMap { case (destVid, destEdge) => {
       val propagateEdges = edges.mapValues(edge => {
         Edge(edge.vendorCode, edge.probability * destEdge.probability, math.max(destEdge.ts, edge.ts))
-      }).filter { case (vid, props) => vid != destVid && props.probability >= minEdgeProbability }
+      }).filter { case (vid, props) => vid != destVid && (props.probability == 0 || props.probability >= minEdgeProbability) }
       if (propagateEdges.size == 0) {
         Seq()
       } else {

@@ -8,13 +8,13 @@ import java.util.Properties
  *
  * This class is for submitting the job with `./submit` script, e.g.:
  *
- * ./submit net.imagini.dxp.graphstream.ingest.SyncsToGraph /etc/vdna/graphstream/config.properties
+ * ./submit net.imagini.dxp.graphstream.ingest.SyncsToGraph 3 /etc/vdna/graphstream/config.properties
  */
 object SyncsToGraph {
   def main(args: Array[String]) = {
     val config = new Properties
-    config.load( new FileInputStream(args(0)))
+    config.load( new FileInputStream(args(1)))
     new SyncsToGraphApplication(config)
-      .runOnYarn(taskMemoryMb = 8 * 1024, awaitCompletion = args.length == 2 && args(1) == "wait")
+      .runOnYarn(taskMemoryMb = args(0).toInt * 1024, awaitCompletion = args.length == 3 && args(2) == "wait")
   }
 }
