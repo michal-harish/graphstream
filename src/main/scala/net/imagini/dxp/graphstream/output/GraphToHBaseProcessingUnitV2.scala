@@ -100,69 +100,71 @@ class GraphToHBaseProcessingUnitV2(config: Properties, logicalPartition: Int, to
   private class LoaderThread extends Thread {
     override def run: Unit = {
       while (!isInterrupted) {
-        compactionSemaphore.acquire(numFetchers)
-        var numErrors = 0L
-        try {
-          if (compactedQueue.size < MIN_COMPACTION_SIZE) {
-            Thread.sleep(MAX_COMPACTION_SLEEP_TIME_MS)
-          } else while (!isInterrupted && compactedQueue.size > 0) {
-            try {
-              if (connection == null) {
-                log.info("Opening HBase connection")
-                connection = ConnectionFactory.createConnection(hbaConf)
-                log.info(s"Opening HBase Buffered Mutator for table `${tableNameAsString}")
-                table = connection.getBufferedMutator(TableName.valueOf(tableNameAsString))
-              }
-              log.debug(s"HBase mutation size = ${compactedQueue.size}")
-              val it = compactedQueue.entrySet.iterator
-              while (!isInterrupted && it.hasNext) {
-                val entry = it.next
-                val key = entry.getKey
-                val edges = entry.getValue
-                var put: Put = null
-                var delete: Delete = null
-                if (edges == null) {
-                  delete = new Delete(key.bytes)
-                  delete.addFamily(Bytes.toBytes("N"))
-                } else {
-                  if (edges.size > 0) {
-                    put = new Put(key.bytes)
-                    edges.foreach { case (destVid, destEdge) => {
-                      if (destEdge.probability == 0) {
-                        if (delete == null) {
-                          delete = new Delete(key.bytes)
+        if (compactedQueue.size < MIN_COMPACTION_SIZE) {
+          Thread.sleep(MAX_COMPACTION_SLEEP_TIME_MS)
+        } else {
+          var numErrors = 0L
+          compactionSemaphore.acquire(numFetchers)
+          try {
+            while (!isInterrupted && compactedQueue.size > 0) {
+              try {
+                if (connection == null) {
+                  log.info("Opening HBase connection")
+                  connection = ConnectionFactory.createConnection(hbaConf)
+                  log.info(s"Opening HBase Buffered Mutator for table `${tableNameAsString}")
+                  table = connection.getBufferedMutator(TableName.valueOf(tableNameAsString))
+                }
+                log.debug(s"HBase mutation size = ${compactedQueue.size}")
+                val it = compactedQueue.entrySet.iterator
+                while (!isInterrupted && it.hasNext) {
+                  val entry = it.next
+                  val key = entry.getKey
+                  val edges = entry.getValue
+                  var put: Put = null
+                  var delete: Delete = null
+                  if (edges == null) {
+                    delete = new Delete(key.bytes)
+                    delete.addFamily(Bytes.toBytes("N"))
+                  } else {
+                    if (edges.size > 0) {
+                      put = new Put(key.bytes)
+                      edges.foreach { case (destVid, destEdge) => {
+                        if (destEdge.probability == 0) {
+                          if (delete == null) {
+                            delete = new Delete(key.bytes)
+                          }
+                          delete.addColumn(Bytes.toBytes("N"), destVid.bytes)
+                        } else {
+                          put.addColumn(Bytes.toBytes("N"), destVid.bytes, destEdge.ts, destEdge.bytes)
                         }
-                        delete.addColumn(Bytes.toBytes("N"), destVid.bytes)
-                      } else {
-                        put.addColumn(Bytes.toBytes("N"), destVid.bytes, destEdge.ts, destEdge.bytes)
+                      }
                       }
                     }
-                    }
+                  }
+                  if (delete != null) {
+                    //TODO table.mutate(delete)
+                  }
+                  if (put != null) {
+                    //TODO table.mutate(put)
                   }
                 }
-                if (delete != null) {
-                  //TODO table.mutate(delete)
-                }
-                if (put != null) {
-                  //TODO table.mutate(put)
+                mutationCounter += compactedQueue.size
+                compactedQueue.clear
+              } catch {
+                case e: IOException => {
+                  closeTable
+                  numErrors += 1
+                  if (numErrors >= MAX_NUM_HBASE_RETRIES) {
+                    log.warn(s"HBase mutation retry: ${numErrors}, mutation size = ${compactedQueue.size}", e)
+                    handleError(e)
+                    return
+                  }
                 }
               }
-              mutationCounter += compactedQueue.size
-              compactedQueue.clear
             }
+          } finally {
+            compactionSemaphore.release(numFetchers)
           }
-        } catch {
-          case e: IOException => {
-            closeTable
-            numErrors += 1
-            if (numErrors >= MAX_NUM_HBASE_RETRIES) {
-              log.warn(s"HBase mutation retry: ${numErrors}, mutation size = ${compactedQueue.size}", e)
-              handleError(e)
-              return
-            }
-          }
-        } finally {
-          compactionSemaphore.release(numFetchers)
         }
       }
     }

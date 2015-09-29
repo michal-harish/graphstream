@@ -15,6 +15,6 @@ object SyncsToGraph {
     val config = new Properties
     config.load( new FileInputStream(args(0)))
     new SyncsToGraphApplication(config)
-      .runOnYarn(taskMemoryMb = 4 * 1024, awaitCompletion = args.length == 2 && args(1) == "wait")
+      .runOnYarn(taskMemoryMb = 8 * 1024, awaitCompletion = args.length == 2 && args(1) == "wait")
   }
 }
