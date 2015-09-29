@@ -7,6 +7,7 @@ import java.util.concurrent.{Semaphore, ConcurrentHashMap}
 import kafka.message.MessageAndOffset
 import net.imagini.dxp.common.{BSPMessage, Edge, Vid}
 import org.apache.donut.{DonutAppTask, Fetcher, FetcherDelta}
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase.{TableName, HBaseConfiguration}
@@ -23,13 +24,13 @@ import org.slf4j.LoggerFactory
 class GraphToHBaseProcessingUnitV2(config: Properties, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
   extends DonutAppTask(config, logicalPartition, totalLogicalPartitions, topics) {
 
-  private val log = LoggerFactory.getLogger(classOf[GraphToHBaseProcessingUnitV1])
+  private val log = LoggerFactory.getLogger(classOf[GraphToHBaseProcessingUnitV2])
 
   val MIN_COMPACTION_SIZE = 1000
   val MAX_COMPACTION_SLEEP_TIME_MS = 5000L
   val MAX_NUM_HBASE_RETRIES = 5
 
-  val hbaConf = HBaseConfiguration.create()
+  val hbaConf: Configuration = HBaseConfiguration.create()
   hbaConf.addResource(new Path(s"file://${config.getProperty("yarn1.site")}/core-site.xml"))
   hbaConf.addResource(new Path(s"file://${config.getProperty("yarn1.site")}/hdfs-site.xml"))
   hbaConf.addResource(new Path(s"file://${config.getProperty("yarn1.site")}/yarn-site.xml"))
@@ -88,6 +89,11 @@ class GraphToHBaseProcessingUnitV2(config: Properties, logicalPartition: Int, to
                   compactedQueue.put(key, previousEdges ++ addedEdges)
                 }
               }
+            }
+          } catch {
+            case e: Throwable => {
+              log.error("HELLO", e)
+              Thread.sleep(100000)
             }
           } finally {
             compactionSemaphore.release(1)
@@ -154,8 +160,8 @@ class GraphToHBaseProcessingUnitV2(config: Properties, logicalPartition: Int, to
                 case e: IOException => {
                   closeTable
                   numErrors += 1
+                  log.warn(s"HBase mutation retry: ${numErrors}, mutation size = ${compactedQueue.size}", e)
                   if (numErrors >= MAX_NUM_HBASE_RETRIES) {
-                    log.warn(s"HBase mutation retry: ${numErrors}, mutation size = ${compactedQueue.size}", e)
                     handleError(e)
                     return
                   }
