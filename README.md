@@ -16,18 +16,24 @@
 ## GraphStream Pipeline Architecture
 </a>
 
-The GraphStream Pipeline consists of 2 components:
+The Graph Pipleine starts with syncs collected from Event Trackers or imported from partners and continues through GraphStream Application which processes and generates graph updates which are then off-loaded into HBase where there are mapped and available as Spark RDDs.
 
-1. **SyncsToGraph** - this is a simple transformation of `datasync` topic to `graphdelta` topic - syncs are filtered and for each sync that passes two respective BSPMessage(s) are sent representing edge and reverse edge of the connection.
-2. **ConnectedBSP** - this is a recursive operator which consumes (and recursively produces into) `graphdelta` delta topic as well as publishes the new state into the `graphstate` commit log topic.
+The GraphStream Application consists of 3 components:
 
-![hello](doc/GraphStream_architecture.png)
+1. **SyncsToGraph** - this is a simple transformation of `datasync` topic to `graphstream` delta topic - syncs are filtered and for each sync that passes two respective BSPMessage(s) are sent representing edge and reverse edge of the connection.
+
+2. **ConnectedBSP** - this is a recursive operator which consumes (and recursively produces into) `graphstream` delta topic as well as publishes the new state into the `graphstate` commit log topic.
+
+3. **GraphToHBase** - this is a compaction operator which takes recent updates to the graph, compacts them by the key and loads into HBase table dxp-graph
+
+
+![Architecture](doc/GraphStream_architecture.png)
 
 While SyncsToGraph is a simple stream-to-stream map operation, the internal workings of ConnectedBSP requires a more detailed explanation. It also illustrates more general concept of local state in the realm of stream processing, more specifically *recurisve stateful stream processing*
 
 First we need a different kind of topic - a commit log which is supported by Kafka fetaure called [Log  Compaction](https://cwiki.apache.org/confluence/display/KAFKA/Log+Compaction). A topic 'graphstate' in our architecture is log-compacted.
 
-*TODO zoom on the ConnectedBSP*
+![Compacted State](doc/GraphStream_state.png)
 
 
 <a name="configuration">
@@ -161,7 +167,6 @@ There are two components(see [architecture](#architecture) above) and each has 2
 ### TODOs
 
 - net.imagini.dxp.graphstream.ingest.CrosswiseToGraph 
-- update architecture diagram with 2 more components 
 - Zero copy transitions Kafka Input -> State -> Kafka Output (also currently ByteBuffer.array is used but some buffers may be direct)
 - Edges should not be represented as Map[Vid, EdgeProps] but rather Set[Edge] where Edge object would contain the dest Vid to allow for duplicate connections with different properties 
 - SyncsToGraph could have a state for short window for per-cookie counters to detected robots  
