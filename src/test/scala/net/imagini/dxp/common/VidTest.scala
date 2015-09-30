@@ -59,4 +59,31 @@ class VidTest extends FlatSpec with Matchers {
   val sortedSeq = seq.sorted
 
   customComparatorSortedSeq should be(sortedSeq)
+
+
+  behavior of "Vid partitioner"
+  it should "yield correct partitions based on first 4 bytes of a Vid" in {
+
+    val numPartitions = 5
+    Vid.getPartition(numPartitions, Array(0.toByte,0.toByte,0.toByte,0.toByte)) should be(0)
+    Vid.getPartition(numPartitions, Array(51.toByte,51.toByte,51.toByte,51.toByte)) should be(1)
+    Vid.getPartition(numPartitions, Array(102.toByte,102.toByte,102.toByte,102.toByte)) should be(2)
+    Vid.getPartition(numPartitions, Array(153.toByte,153.toByte,153.toByte,153.toByte)) should be(3)
+    Vid.getPartition(numPartitions, Array(204.toByte,204.toByte,204.toByte,204.toByte)) should be(4)
+    Vid.getPartition(numPartitions, Array(255.toByte,255.toByte,255.toByte,255.toByte)) should be(4)
+
+    Vid.getPartition(numPartitions, ByteUtils.parseUUID("00000000-0000-0000-0000-000000000000")) should be(0)
+    Vid.getPartition(numPartitions, ByteUtils.parseUUID("33333332-0000-0000-0000-000000000000")) should be(0)
+    Vid.getPartition(numPartitions, ByteUtils.parseUUID("33333333-0000-0000-0000-000000000000")) should be(1)
+    Vid.getPartition(numPartitions, ByteUtils.parseUUID("66666665-0000-0000-0000-000000000000")) should be(1)
+    Vid.getPartition(numPartitions, ByteUtils.parseUUID("66666666-0000-0000-0000-000000000000")) should be(2)
+    Vid.getPartition(numPartitions, ByteUtils.parseUUID("99999998-0000-0000-0000-000000000000")) should be(2)
+    Vid.getPartition(numPartitions, ByteUtils.parseUUID("99999999-0000-0000-0000-000000000000")) should be(3)
+    Vid.getPartition(numPartitions, ByteUtils.parseUUID("cccccccb-0000-0000-0000-000000000000")) should be(3)
+    Vid.getPartition(numPartitions, ByteUtils.parseUUID("cccccccc-0000-0000-0000-000000000000")) should be(4)
+    Vid.getPartition(numPartitions, ByteUtils.parseUUID("fffffffe-0000-0000-0000-000000000000")) should be(4)
+    Vid.getPartition(numPartitions, ByteUtils.parseUUID("ffffffff-0000-0000-0000-000000000000")) should be(4)
+  }
+
+
 }

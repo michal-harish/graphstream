@@ -3,6 +3,7 @@ package net.imagini.dxp.graphstream.connectedbsp
 import java.util.Properties
 
 import kafka.message.MessageAndOffset
+import net.imagini.dxp.common.VidKafkaPartitioner
 import org.apache.donut._
 
 /**
@@ -13,9 +14,9 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
 
   private val processor = new ConnectedBSPProcessor(maxStateSizeMb = 1024 * 8, minEdgeProbability = 0.75)
 
-  private val deltaProducer = kafkaUtils.createSnappyProducer[KafkaRangePartitioner](numAcks = 0, batchSize = 1000)
+  private val deltaProducer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 1000)
 
-  private val stateProducer = kafkaUtils.createCompactProducer[KafkaRangePartitioner](numAcks = 0, batchSize = 200)
+  private val stateProducer = kafkaUtils.createCompactProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 200)
 
   override def onShutdown: Unit = {
     deltaProducer.close

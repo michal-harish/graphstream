@@ -9,8 +9,8 @@ import kafka.message.MessageAndOffset
 import kafka.producer.KeyedMessage
 import net.imagini.common.message.VDNAUserImport
 import net.imagini.common.messaging.serde.VDNAUniversalDeserializer
-import net.imagini.dxp.common.{Vid, Edge, BSPMessage, BlackLists}
-import org.apache.donut.{FetcherDelta, Fetcher, KafkaRangePartitioner, DonutAppTask}
+import net.imagini.dxp.common._
+import org.apache.donut.{FetcherDelta, Fetcher, DonutAppTask}
 
 /**
  * Created by mharis on 15/09/15.
@@ -27,7 +27,7 @@ class SyncsToGraphProcessingUnit(config: Properties, logicalPartition: Int, tota
   val idSpaceSet = Set("a", "r", "d")
   val blacklists = new BlackLists
 
-  val snappyProducer = kafkaUtils.createSnappyProducer[KafkaRangePartitioner](numAcks = 0, batchSize = 500)
+  val snappyProducer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 500)
 
   override def onShutdown: Unit = {
     snappyProducer.close

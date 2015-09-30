@@ -1,6 +1,8 @@
 
 package net.imagini.dxp.common
 
+import java.nio.ByteBuffer
+
 class Vid(val isVdna: Boolean, val idSpace: Short, val bytes: Array[Byte], val hash: Int)
 extends java.io.Serializable with Ordered[Vid] {
   override def compareTo(that: Vid): Int = {
@@ -48,6 +50,20 @@ object Vid {
 
   def highest[T](bc: Iterable[(Vid,T)]): (Vid, T) = if (bc.isEmpty) null else {
     bc.reduce((b, c) => if (b._1.compareTo(c._1) >= 0) b else c)
+  }
+
+  private val maxHash = BigInt(1, Array(255.toByte,255.toByte,255.toByte,255.toByte))
+
+  def getPartition(numPartitions: Int, vid: ByteBuffer):Int = getPartition(numPartitions, vid.array, vid.arrayOffset)
+
+  def getPartition(numPartitions: Int, vid: Vid):Int = getPartition(numPartitions, vid.bytes, 0)
+
+  def getPartition(numPartitions: Int, vidArray: Array[Byte]):Int = getPartition(numPartitions, vidArray, 0)
+
+  def getPartition(numPartitions: Int, vidArray: Array[Byte], vidArrayOffset: Int): Int = {
+    val unit = maxHash / (numPartitions)
+    val p = (BigInt(1, vidArray.slice(vidArrayOffset, vidArrayOffset + 4)) / unit).toInt
+    math.min(p, numPartitions-1)
   }
 
 }
