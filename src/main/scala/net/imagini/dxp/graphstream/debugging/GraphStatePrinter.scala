@@ -8,6 +8,7 @@ import org.apache.donut.KafkaUtils
 /**
  * Created by mharis on 22/09/15.
  */
+
 object GraphStatePrinter {
   def main(args: Array[String]) : Unit = {
     val config = new Properties

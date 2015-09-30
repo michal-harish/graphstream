@@ -14,10 +14,18 @@ import org.apache.donut.DonutApp
  *
  * The input into this application comes from SyncsTransformApplication which provides fresh edges into the graph.
  * The input is amplified by recursive consulation of State and production of secondary delta messages.
+ *
+ * MEMORY UTILISATION STRUCTURE:
+ *
+ *    2 Gb - heap for processing
+ *    8 Gb - off-heap for local state
+ *
  */
 
 class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPProcessingUnit]({
+  config.setProperty("donut.task.memory.mb", "10240")
   config.setProperty("yarn1.keepContainers", "false")
+  config.setProperty("yarn1.jvm.args", "-Xmx2g -Xms1g -XX:NewRatio=2 -XX:+UseG1GC -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config.setProperty("kafka.group.id", "GraphStreamingBSP")
   config.setProperty("kafka.topics", "graphdelta,graphstate")
   config.setProperty("kafka.cogroup", "true")

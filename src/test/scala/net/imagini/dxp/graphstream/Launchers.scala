@@ -18,6 +18,10 @@ object Config extends Properties {
   load( new FileInputStream(path))
 }
 
+/**
+ * GraphStream components for launching from an IDE
+ */
+
 object ConnectedBSPLocalLauncher extends App {
   new ConnectedBSPApplication(Config).runLocally(multiThreadMode = false)
 }
@@ -31,7 +35,7 @@ object SyncsToGraphLocalLauncher extends App {
 }
 
 object SyncsToGraphYarnLauncher extends App {
-  SyncsToGraph.main(Array("4", Config.path, "wait"))
+  SyncsToGraph.main(Array(Config.path, "wait"))
 }
 
 object GraphToHBaseLocalLauncher extends App {
@@ -39,9 +43,12 @@ object GraphToHBaseLocalLauncher extends App {
 }
 
 object GraphToHBaseYarnLauncher extends App {
-  GraphToHBase.main(Array("8", Config.path, "wait"))
+  GraphToHBase.main(Array(Config.path, "wait"))
 }
 
+/**
+ * Debugger launchers
+ */
 
 object DebugGraphStream extends App {
   GraphStatePrinter.main(Array(Config.path, "2"))

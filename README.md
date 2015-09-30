@@ -47,9 +47,9 @@ Because the application is launched normally in the YARN cluster but *from a cli
 yarn1.site=/opt/envs/prod/etc/hadoop
 yarn1.classpath=/opt/scala/scala-library-2.10.4.jar:/opt/scala/kafka_2.10-0.8.2.1.jar:/usr/lib/hbase/*:/usr/lib/hbase/lib/htrace-core-3.1.0-incubating.jar:/usr/lib/hbase/lib/guava-12.0.1.jar:/usr/lib/hbase/lib/netty-all-4.0.23.Final.jar
 yarn1.queue=developers
-yarn1.jvm.args=-XX:+UseConcMarkSweepGC -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait
-yarn1.env.LD_PRELOAD=/opt/jprofiler/librebind.so
-yarn1.env.REBIND_PORT=8849:0
+#YARN-Jprofiler
+#yarn1.env.LD_PRELOAD=/opt/jprofiler/librebind.so
+#yarn1.env.REBIND_PORT=8849:0
 #KAFKA configuration
 zookeeper.connect=message-01.prod.visualdna.com,message-02.prod.visualdna.com,message-03.prod.visualdna.com
 kafka.brokers=message-01.prod.visualdna.com:9092,message-02.prod.visualdna.com:9092,message-03.prod.visualdna.com:9092
@@ -89,7 +89,7 @@ log.cleaner.enable=true
 ### Creating normal topic with retention
 
 ```bash
-./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 1 --config cleanup.policy=delete
+./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 2 --config cleanup.policy=delete
 ```
 
 ### Creating a compacted topic
@@ -167,8 +167,7 @@ There are two components(see [architecture](#architecture) above) and each has 2
 1. YarnLaunch - submits the application to the YARN cluster and waits for completion printing any progress - stopping the application will attempt to kill the yarn context as well from the shutdown hook
 2. LocalLaunch - is for debugging and doesn't actually submit the application to yarn and all streaming and processing happens locally
 
-### TODOs
-- Yarn1 < librebind < jprofiler - jvm tuning for faster gc cycle  
+### TODOs  
 - Evicted keys should be also recorded in graphdelta topic so that hbase loader can pick it up and remove the row
 - net.imagini.dxp.graphstream.ingest.AdjacencyListsToGraph 
 - Zero copy transitions Kafka Input -> State -> Kafka Output (also currently ByteBuffer.array is used but some buffers may be direct)
