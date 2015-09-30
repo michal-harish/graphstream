@@ -10,6 +10,10 @@ import org.apache.donut.DonutApp
  * This is a simple transformation streaming processor. Each unit (SyncsToGraphProcessUnit) processes fixed
  * set of partitions from json serialized 'datasync' topic and transforms each sync (a pair of connected IDs)
  * to a pair of messages representing a delta edge and reverse edge between the IDs into 'graphstream' topic.
+ *
+ * MEMORY FOOTPRINT
+ * ================
+ * 12 x 1Gb = 12 Gb
  */
 
 class SyncsToGraphApplication(config: Properties) extends DonutApp[SyncsToGraphProcessingUnit]({

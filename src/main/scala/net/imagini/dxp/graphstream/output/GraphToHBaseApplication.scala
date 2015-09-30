@@ -9,6 +9,10 @@ import org.apache.donut.DonutApp
  *
  * This component consumes the total output of bsp connected components using `graphdelta` topic and
  * off-loads the changes into HBase graph table.
+ *
+ * MEMORY FOOTPRINT
+ * ================
+ * 32 x 1Gb = 32 Gb
  */
 
 class GraphToHBaseApplication(config: Properties) extends DonutApp[GraphToHBaseProcessingUnit]({

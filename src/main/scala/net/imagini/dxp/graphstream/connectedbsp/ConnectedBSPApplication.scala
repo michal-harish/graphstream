@@ -15,11 +15,12 @@ import org.apache.donut.DonutApp
  * The input into this application comes from SyncsTransformApplication which provides fresh edges into the graph.
  * The input is amplified by recursive consulation of State and production of secondary delta messages.
  *
- * MEMORY UTILISATION STRUCTURE:
- *
- *    2 Gb - heap for processing
- *    8 Gb - off-heap for local state
- *
+ * MEMORY FOOTPRINT
+ * =========================================
+ *  2 Gb - heap for processing per task
+ *  8 Gb - off-heap for local state per task
+ * =========================================
+ * 10 Gb x 32 = 320 Gb
  */
 
 class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPProcessingUnit]({

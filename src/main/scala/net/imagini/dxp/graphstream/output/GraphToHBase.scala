@@ -9,6 +9,7 @@ import java.util.Properties
  * This class is for submitting the job with `./submit` script, e.g.:
  *
  * ./submit net.imagini.dxp.graphstream.output.GraphToHBase /etc/vdna/graphstream/config.properties
+ *
  */
 
 object GraphToHBase {

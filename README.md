@@ -86,7 +86,7 @@ For state topics we require log cleaner enabled on the brokers
 log.cleaner.enable=true
 ```
 
-### Creating normal topic with retention
+### Creating normal topics with retention
 
 ```bash
 ./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 2 --config cleanup.policy=delete
