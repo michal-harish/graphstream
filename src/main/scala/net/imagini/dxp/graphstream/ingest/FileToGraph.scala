@@ -99,7 +99,7 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
     var numHardErrors = 0
     while (true) try {
       if (producer == null) {
-        producer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 1000)
+        producer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 2000, queueSize = 100000)
       }
       produce(new KeyedMessage(
         "graphdelta",
