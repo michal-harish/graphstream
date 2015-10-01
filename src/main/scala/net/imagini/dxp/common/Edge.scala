@@ -38,7 +38,7 @@ object Edge extends java.io.Serializable {
     VENDOR_CODE_UNKNOWN -> "UNKNOWN",
     //PROBABILISTIC
     128.toShort -> "S6",
-    129.toShort -> "CROSSWISE",
+    129.toShort -> "CW",
     //DETERMINISTIC
     250.toShort -> "AAT",
     //RESERVED

@@ -18,17 +18,17 @@ import org.apache.donut.DonutApp
  * MEMORY FOOTPRINT
  * =========================================
  *  2 Gb - heap for processing per task
- *  8 Gb - off-heap for local state per task
+ *  5 Gb - off-heap for local state per task
  * =========================================
- * 10 Gb x 32 = 320 Gb
+ * 7 Gb x 32 = 224 Gb
  */
 
 class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPProcessingUnit]({
-  config.setProperty("donut.task.memory.mb", "10240")
+  config.setProperty("group.id", "GraphStreamingBSP")
+  config.setProperty("topics", "graphdelta,graphstate")
+  config.setProperty("cogroup", "true")
+  config.setProperty("task.memory.mb", "5120")
   config.setProperty("yarn1.keepContainers", "false")
   config.setProperty("yarn1.jvm.args", "-Xmx2g -Xms1g -XX:NewRatio=2 -XX:+UseG1GC -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
-  config.setProperty("kafka.group.id", "GraphStreamingBSP")
-  config.setProperty("kafka.topics", "graphdelta,graphstate")
-  config.setProperty("kafka.cogroup", "true")
   config
 })

@@ -20,7 +20,7 @@ class IdSpaceTest  extends FlatSpec with Matchers {
   behavior of "LongPositive IdSpace"
 
   it should "partition symmetrically" in {
-    val vids = scala.io.Source.fromInputStream(getClass.getResourceAsStream("/appnexus/sample_ids"))
+    val vids = scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sample_an"))
       .getLines.map(id => {
       val vid = Vid("a", id)
       id should be(vid.asString)
@@ -32,7 +32,7 @@ class IdSpaceTest  extends FlatSpec with Matchers {
   behavior of "LongHash IdSpace"
 
   it should "partition symmetrically" in {
-    val vids = scala.io.Source.fromInputStream(getClass.getResourceAsStream("/rocketfuel/sample_ids"))
+    val vids = scala.io.Source.fromInputStream(getClass.getResourceAsStream("/sample_rf"))
       .getLines.map(id => {
       val vid = Vid("test3", id)
       id should be(vid.asString)

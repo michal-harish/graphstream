@@ -11,14 +11,7 @@ import org.apache.donut.KafkaUtils
 
 /**
  * Created by mharis on 14/09/15.
- */
-
-object Config extends Properties {
-  val path = "/etc/vdna/graphstream/config.properties"
-  load( new FileInputStream(path))
-}
-
-/**
+ *
  * GraphStream components for launching from an IDE
  */
 

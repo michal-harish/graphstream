@@ -18,13 +18,17 @@
 
 The Graph Pipleine starts with syncs collected from Event Trackers or imported from partners and continues through GraphStream Application which processes and generates graph updates which are then off-loaded into HBase where there are mapped and available as Spark RDDs.
 
-The GraphStream Application consists of 3 components:
+The GraphStream Application consists roughly of 3 stages:
 
-1. **SyncsToGraph** - this is a simple transformation of `datasync` topic to `graphstream` delta topic - syncs are filtered and for each sync that passes two respective BSPMessage(s) are sent representing edge and reverse edge of the connection.
+1. **Ingest** - ingesting connections into the graph from various sources - two respective BSPMessage(s) are sent representing edge and reverse edge of the connection.
+    a) **SyncsToGraph** - this is a simple transformation of `datasync` topic to `graphdelta` delta topic 
+    b) **FileToGraph** - used to dump offline syncs into `graphdelta` topic
 
 2. **ConnectedBSP** - this is a recursive operator which consumes (and recursively produces into) `graphstream` delta topic as well as publishes the new state into the `graphstate` commit log topic.
 
-3. **GraphToHBase** - this is a compaction operator which takes recent updates to the graph, compacts them by the key and loads into HBase table dxp-graph
+3. **Output**
+    a) **graphstate** - this a sideeffect of the connectedBSP processor which generates the commit log as a compacted kafka topic `graphstate`
+    b) **GraphToHBase** - this is an incremental compaction operator which consumes graphdelta topic, compacts the changes by the key into micro batches and loads into HBase table dxp-graph
 
 
 ![Architecture](doc/GraphStream_architecture.png)
@@ -169,7 +173,6 @@ There are two components(see [architecture](#architecture) above) and each has 2
 
 ### TODOs  
 - Evicted keys should be also recorded in graphdelta topic so that hbase loader can pick it up and remove the row
-- net.imagini.dxp.graphstream.ingest.AdjacencyListsToGraph 
 - Zero copy transitions Kafka Input -> State -> Kafka Output (also currently ByteBuffer.array is used but some buffers may be direct)
 - Edges should not be represented as Map[Vid, EdgeProps] but rather Set[Edge] where Edge object would contain the dest Vid to allow for duplicate connections with different properties 
 - SyncsToGraph could have a state for short window for per-cookie counters to detected robots  

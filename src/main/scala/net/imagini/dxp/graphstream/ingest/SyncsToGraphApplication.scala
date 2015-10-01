@@ -13,16 +13,17 @@ import org.apache.donut.DonutApp
  *
  * MEMORY FOOTPRINT
  * ================
- * 12 x 1Gb = 12 Gb
+ * 6 x 1Gb = 6 Gb
  */
 
 class SyncsToGraphApplication(config: Properties) extends DonutApp[SyncsToGraphProcessingUnit]({
-  config.setProperty("donut.task.memory.mb", "1024")
+  config.setProperty("group.id", "GraphSyncsStreamingBSP")
+  config.setProperty("topics", "datasync")
+  config.setProperty("cogroup", "false")
+  config.setProperty("max.tasks", "6")
+  config.setProperty("task.memory.mb", "1024")
   config.setProperty("yarn1.keepContainers", "true")
   config.setProperty("yarn1.jvm.args", "-Xmx768m -Xms512m -XX:NewRatio=5 -XX:+UseG1GC -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
-  config.setProperty("kafka.group.id", "GraphSyncsStreamingBSP")
-  config.setProperty("kafka.topics", "datasync")
-  config.setProperty("kafka.cogroup", "false")
   config
 })
 
