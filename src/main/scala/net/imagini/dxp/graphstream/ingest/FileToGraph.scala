@@ -1,6 +1,6 @@
 package net.imagini.dxp.graphstream.ingest
 
-import java.io.FileInputStream
+import java.io.{IOException, FileInputStream}
 import java.nio.ByteBuffer
 import java.util.Properties
 
@@ -60,26 +60,16 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
         processLine(ln) match {
           case None => {
             counterIgnored += 1L
-            if (counterIgnored % 100000 == 0) {
+            if (counterIgnored % 1000000 == 0) {
               println(s"IGNORED LINES: ${counterIgnored} ...")
             }
           }
           case Some(couple) => {
-            if (producer == null) {
-              producer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](numAcks = 1, batchSize = 500)
-            }
-            producer.send(
-              new KeyedMessage(
-                "graphdelta",
-                ByteBuffer.wrap(BSPMessage.encodeKey(couple(0)._1)),
-                ByteBuffer.wrap(BSPMessage.encodePayload((1, Map(couple(0)._2))))),
-              new KeyedMessage(
-                "graphdelta",
-                ByteBuffer.wrap(BSPMessage.encodeKey(couple(1)._1)),
-                ByteBuffer.wrap(BSPMessage.encodePayload((1, Map(couple(1)._2)))))
-              )
-            counterProduced += 2L
-            if (counterProduced % 100000 == 0) {
+            produce(couple(0))
+            counterProduced += 1L
+            produce(couple(1))
+            counterProduced += 1L
+            if (counterProduced % 1000000 <= 1) {
               println(s"PRODUCED MESSAGES: ${counterProduced} ...")
             }
           }
@@ -89,9 +79,9 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
       }
     }
 
-    println(s"PRODUCED MESSAGES: ${counterProduced}")
-    println(s"IGNORED LINES: ${counterIgnored}")
-    println(s"PRODUCED MESSAGES: ${counterInvalid}")
+    println(s"COMPLETED, PRODUCED MESSAGES: ${counterProduced}")
+    println(s"COMPLETED, IGNORED LINES: ${counterIgnored}")
+    println(s"COMPLETED, PRODUCED MESSAGES: ${counterInvalid}")
 
   }
 
@@ -103,5 +93,59 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
       None
     }
   }
+
+  private def produce(pair: (Vid, (Vid, Edge))): Unit = {
+
+    var numHardErrors = 0
+    while (true) try {
+      if (producer == null) {
+        producer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 1000)
+      }
+      produce(new KeyedMessage(
+        "graphdelta",
+        ByteBuffer.wrap(BSPMessage.encodeKey(pair._1)),
+        ByteBuffer.wrap(BSPMessage.encodePayload((1, Map(pair._2))))))
+      return
+    } catch {
+      case e: IOException => {
+        numHardErrors += 1
+        if (numHardErrors > 3) {
+          throw e
+        } else {
+          if (producer != null) {
+            try {
+              producer.close
+            } catch {
+              case e: Throwable => {}
+            }
+          }
+          producer = null
+          Thread.sleep(5000)
+        }
+      }
+    }
+  }
+
+  private def produce(message: KeyedMessage[ByteBuffer, ByteBuffer]): Unit = {
+    var numSoftErrors = 0
+    while (true) try {
+      if (producer == null) {
+        producer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](numAcks = 1, batchSize = 500)
+      }
+      producer.send(message)
+      return
+    } catch {
+      case e: IOException => {
+        numSoftErrors += 1
+        if (numSoftErrors > 3) {
+          throw e
+        } else {
+          Thread.sleep(1000)
+        }
+      }
+    }
+  }
+
+
 
 }

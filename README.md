@@ -18,17 +18,21 @@
 
 The Graph Pipleine starts with syncs collected from Event Trackers or imported from partners and continues through GraphStream Application which processes and generates graph updates which are then off-loaded into HBase where there are mapped and available as Spark RDDs.
 
-The GraphStream Application consists roughly of 3 stages:
+The GraphStream Application consists roughly of 3 stages each with one or more components:
 
 1. **Ingest** - ingesting connections into the graph from various sources - two respective BSPMessage(s) are sent representing edge and reverse edge of the connection.
-    a) **SyncsToGraph** - this is a simple transformation of `datasync` topic to `graphdelta` delta topic 
-    b) **FileToGraph** - used to dump offline syncs into `graphdelta` topic
 
-2. **ConnectedBSP** - this is a recursive operator which consumes (and recursively produces into) `graphstream` delta topic as well as publishes the new state into the `graphstate` commit log topic.
+	- **SyncsToGraph** - this is a simple transformation of `datasync` topic to `graphdelta` delta topic 
+    
+   - **FileToGraph** - used to dump offline syncs into `graphdelta` topic
+
+2. **Process** 
+
+   - **ConnectedBSP** - this is a recursive operator which consumes (and recursively produces into) `graphdelta ` delta topic as well as publishes the new state into the `graphstate` commit log topic.
 
 3. **Output**
-    a) **graphstate** - this a sideeffect of the connectedBSP processor which generates the commit log as a compacted kafka topic `graphstate`
-    b) **GraphToHBase** - this is an incremental compaction operator which consumes graphdelta topic, compacts the changes by the key into micro batches and loads into HBase table dxp-graph
+
+   - **GraphToHBase** - this is an incremental compaction operator which consumes graphdelta topic, compacts the changes by the key into micro batches and loads into HBase table dxp-graph
 
 
 ![Architecture](doc/GraphStream_architecture.png)

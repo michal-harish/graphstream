@@ -12,13 +12,12 @@ import org.apache.donut.DonutApp
  *
  * MEMORY FOOTPRINT
  * ================
- * 8 x 1Gb = 8 Gb
+ * 32 x 1Gb = 32 Gb
  */
 
 class GraphToHBaseApplication(config: Properties) extends DonutApp[GraphToHBaseProcessingUnit]({
   config.setProperty("group.id", "GraphstreamHBaseLoader")
   config.setProperty("task.memory.mb", "1024")
-  config.setProperty("max.tasks", "8")
   config.setProperty("cogroup", "false")
   config.setProperty("topics", "graphdelta")
   config.setProperty("yarn1.keepContainers", "true")

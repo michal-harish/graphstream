@@ -27,7 +27,8 @@ class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPP
   config.setProperty("group.id", "GraphStreamingBSP")
   config.setProperty("topics", "graphdelta,graphstate")
   config.setProperty("cogroup", "true")
-  config.setProperty("task.memory.mb", "5120")
+  config.setProperty("task.memory.mb", "7168")
+  config.setProperty("state.memory.mb", "5120") // this is not a framework config but ConnectedBSP-specific one
   config.setProperty("yarn1.keepContainers", "false")
   config.setProperty("yarn1.jvm.args", "-Xmx2g -Xms1g -XX:NewRatio=2 -XX:+UseG1GC -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config
