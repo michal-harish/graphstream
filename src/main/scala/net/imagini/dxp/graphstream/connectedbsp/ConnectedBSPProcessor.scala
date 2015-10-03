@@ -17,7 +17,7 @@ import org.apache.donut.memstore.{MemStore, MemStoreMemDb}
 class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
 
   type MESSAGE = KeyedMessage[ByteBuffer, ByteBuffer]
-  val MAX_ITERATIONS = 5
+  val MAX_ITERATIONS = 3
   private val MAX_EDGES = 99
 
   val state: MemStore = new MemStoreMemDb(maxStateSizeMb)

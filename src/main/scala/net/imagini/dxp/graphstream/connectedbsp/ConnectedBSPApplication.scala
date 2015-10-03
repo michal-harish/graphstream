@@ -15,21 +15,26 @@ import org.apache.donut.DonutApp
  * The input into this application comes from SyncsTransformApplication which provides fresh edges into the graph.
  * The input is amplified by recursive consulation of State and production of secondary delta messages.
  *
- * MEMORY FOOTPRINT
- * =========================================
- *  2 Gb - heap for processing per task
- *  5 Gb - off-heap for local state per task
- * =========================================
- * 7 Gb x 32 = 224 Gb
  */
 
 class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPProcessingUnit]({
+
+  val directMemMb = 5120
+  val heapMemMb = 2048
+  /**
+   * Memory Footprint (32 partitions in both topics) = 32 x (5g + 2g) = 224 Gb
+   */
   config.setProperty("group.id", "GraphStreamingBSP")
   config.setProperty("topics", "graphdelta,graphstate")
   config.setProperty("cogroup", "true")
-  config.setProperty("task.memory.mb", "7168")
-  config.setProperty("state.memory.mb", "5120") // this is not a framework config but ConnectedBSP-specific one
-  config.setProperty("yarn1.keepContainers", "false")
-  config.setProperty("yarn1.jvm.args", "-Xmx2g -Xms1g -XX:NewRatio=2 -XX:+UseG1GC -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
+  config.setProperty("yarn1.restart.enabled", "true")
+  config.setProperty("yarn1.restart.failed.retries", "3")
+
+  //TODO config.setProperty("task.direct.memory.mb", s"${directMemMb}")
+  //TODO config.setProperty("task.heap.memory.mb", s"${heapMemMb}")
+  config.setProperty("task.memory.mb", s"${directMemMb + heapMemMb}")
+  config.setProperty("state.memory.mb", s"${directMemMb}")
+
+  config.setProperty("yarn1.jvm.args", s"-XX:MaxDirectMemorySize=${directMemMb}m -Xmx${heapMemMb}m -Xms${heapMemMb}m -XX:NewRatio=2 -XX:+UseSerialGC -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config
 })

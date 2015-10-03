@@ -1,9 +1,9 @@
 package net.imagini.dxp.graphstream.connectedbsp
 
 import java.nio.ByteBuffer
-
 import kafka.producer.KeyedMessage
-import net.imagini.dxp.common.{Vid, Edge, ByteUtils, BSPMessage}
+import net.imagini.dxp.common.{Vid, Edge, BSPMessage}
+import org.apache.donut.ByteUtils
 import org.scalatest.{Matchers, FlatSpec}
 
 /**

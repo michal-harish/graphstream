@@ -87,6 +87,13 @@ OR
 ./submit net.imagini.dxp.graphstream.ingest.SyncsToGraph /etc/vdna/graphstream/config.properties
 ```
 
+### YARN resources
+
+The prototype was built on a modest cluster of **3 kafka brokers** with both `graphdelta` and `graphstate` topics having **32 partitions**.
+When all 3 components, the application requires **297 GB of memory** across **76 YARN containers**. Most of the memory
+is occupied byt the local state of the ConnectedBSP component, cca **160 GB** which covers enough to keep around 21 days of the connected graph state.
+
+
 ### Brokers configuration
 For state topics we require log cleaner enabled on the brokers
 
@@ -97,7 +104,7 @@ log.cleaner.enable=true
 ### Creating normal topics with retention
 
 ```bash
-./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 2 --config cleanup.policy=delete --config retention.bytes=8589934592 
+./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 2 --config cleanup.policy=delete --config retention.bytes=4294967296 
 ```
 
 ### Creating a compacted topic

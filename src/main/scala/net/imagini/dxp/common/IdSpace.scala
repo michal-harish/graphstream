@@ -1,5 +1,7 @@
 package net.imagini.dxp.common
 
+import org.apache.donut.ByteUtils
+
 trait Cookie {}
 
 trait Mobile {}

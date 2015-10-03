@@ -3,6 +3,9 @@ package net.imagini.dxp.common
 
 import java.nio.ByteBuffer
 
+import org.apache.donut.ByteUtils
+
+
 class Vid(val isVdna: Boolean, val idSpace: Short, val bytes: Array[Byte], val hash: Int)
 extends java.io.Serializable with Ordered[Vid] {
   override def compareTo(that: Vid): Int = {
