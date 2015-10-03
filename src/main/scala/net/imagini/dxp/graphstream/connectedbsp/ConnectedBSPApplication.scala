@@ -19,10 +19,10 @@ import org.apache.donut.DonutApp
 
 class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPProcessingUnit]({
 
-  val directMemMb = 5120
+  val directMemMb = 6144
   val heapMemMb = 2048
   /**
-   * Memory Footprint (32 partitions in both topics) = 32 x (5g + 2g) = 224 Gb
+   * Memory Footprint (32 partitions in both topics) = 32 x (6g + 2g) = 256 Gb
    */
   config.setProperty("group.id", "GraphStreamingBSP")
   config.setProperty("topics", "graphdelta,graphstate")

@@ -90,8 +90,8 @@ OR
 ### YARN resources
 
 The prototype was built on a modest cluster of **3 kafka brokers** with both `graphdelta` and `graphstate` topics having **32 partitions**.
-When all 3 components, the application requires **297 GB of memory** across **76 YARN containers**. Most of the memory
-is occupied byt the local state of the ConnectedBSP component, cca **160 GB** which covers enough to keep around 21 days of the connected graph state.
+When all 3 components, the application requires **310 GB of memory** across **76 YARN containers**. Most of the memory
+is occupied byt the local state of the ConnectedBSP component, cca **256 GB** which covers enough to keep around 30 days of the connected graph state.
 
 
 ### Brokers configuration
