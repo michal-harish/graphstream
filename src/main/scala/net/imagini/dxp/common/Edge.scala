@@ -1,6 +1,6 @@
 package net.imagini.dxp.common
 
-import org.apache.donut.ByteUtils
+import org.apache.donut.utils.ByteUtils
 
 /**
  * Created by mharis on 10/09/15.

@@ -3,7 +3,7 @@ package net.imagini.dxp.graphstream.connectedbsp
 import java.nio.ByteBuffer
 import kafka.producer.KeyedMessage
 import net.imagini.dxp.common.{Vid, Edge, BSPMessage}
-import org.apache.donut.ByteUtils
+import org.apache.donut.utils.ByteUtils
 import org.scalatest.{Matchers, FlatSpec}
 
 /**

@@ -1,6 +1,6 @@
 package net.imagini.dxp.common
 
-import org.apache.donut.ByteUtils
+import org.apache.donut.utils.ByteUtils
 import org.scalatest._
 
 class VidTest extends FlatSpec with Matchers {

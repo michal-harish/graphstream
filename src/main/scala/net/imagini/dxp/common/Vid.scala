@@ -3,7 +3,7 @@ package net.imagini.dxp.common
 
 import java.nio.ByteBuffer
 
-import org.apache.donut.ByteUtils
+import org.apache.donut.utils.ByteUtils
 
 
 class Vid(val isVdna: Boolean, val idSpace: Short, val bytes: Array[Byte], val hash: Int)
