@@ -35,7 +35,9 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
       s"=> graphdelta-input(${deltaInPerSec}/sec) evicted ${processor.stateEvict.get}  missed ${processor.stateMiss.get})" +
         s"=> graphstate-input(${stateInPerSec}/sec) " +
         s"=> output(${deltaOutPerSec}/sec) " +
-        s"=> state.size = " + processor.state.size + ", state.memory = " + processor.state.minSizeInBytes / 1024 / 1024 + " Mb"
+        s"| memstore.size = " + processor.state.size + 
+        s"  state.memory = " + processor.state.sizeInBytes / 1024 / 1024 + " Mb" +
+        s"  state.compressRatio = " + processor.state.compressRatio + " "
     )
     ts = System.currentTimeMillis
     processor.stateIn.set(0)
