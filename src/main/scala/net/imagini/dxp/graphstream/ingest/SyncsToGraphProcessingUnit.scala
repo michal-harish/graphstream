@@ -78,12 +78,12 @@ class SyncsToGraphProcessingUnit(config: Properties, logicalPartition: Int, tota
       snappyProducer.send(
         new KeyedMessage(
           "graphdelta",
-            ByteBuffer.wrap(BSPMessage.encodeKey(vdnaId)),
-            ByteBuffer.wrap(BSPMessage.encodePayload((1, Map(partnerId -> edge))))),
+            BSPMessage.encodeKey(vdnaId),
+            BSPMessage.encodePayload((1, Map(partnerId -> edge)))),
         new KeyedMessage(
           "graphdelta",
-            ByteBuffer.wrap(BSPMessage.encodeKey(partnerId)),
-            ByteBuffer.wrap(BSPMessage.encodePayload((1, Map(vdnaId -> edge)))))
+            BSPMessage.encodeKey(partnerId),
+            BSPMessage.encodePayload((1, Map(vdnaId -> edge))))
       )
       counterProduced.addAndGet(2L)
     } catch {

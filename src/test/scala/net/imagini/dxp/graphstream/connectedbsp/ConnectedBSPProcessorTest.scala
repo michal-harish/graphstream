@@ -26,22 +26,24 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
   it should "generate minimum messages and base state for new sync pair (r->a1),(a1->r)" in {
     val inputMap1 = Map(a1 -> aatEdge(0.9, 1))
     val input1 = encode(r1, (1.toByte, inputMap1))
-    val output1 = processRecursively(ByteBuffer.wrap(input1._1), ByteBuffer.wrap(input1._2))
+    val output1 = processRecursively(input1._1, input1._2)
     output1.size should be(1)
     output1(0) should be(message("graphstate", input1))
     print(output1)
     val inputMap2 = Map(r1 -> aatEdge(0.9, 1))
     val input2 = encode(a1, (1.toByte, inputMap2))
-    val output2 = processRecursively(ByteBuffer.wrap(input2._1), ByteBuffer.wrap(input2._2))
+    val output2 = processRecursively(input2._1, input2._2)
     output2.size should be(1)
     print(output2)
     val state = getState
     print(state)
     processor.state.size should be(2)
-    processor.state.contains(r1.bytes) should be(true)
-    processor.state.contains(a1.bytes) should be(true)
-    ByteUtils.equals(processor.state.get(r1.bytes).get, input1._2) should be(true)
-    ByteUtils.equals(processor.state.get(a1.bytes).get, input2._2) should be(true)
+    processor.state.contains(ByteBuffer.wrap(r1.bytes)) should be(true)
+    processor.state.contains(ByteBuffer.wrap(a1.bytes)) should be(true)
+    println(BSPMessage.decodePayload(processor.state.get(ByteBuffer.wrap(r1.bytes)).get))
+    println(BSPMessage.decodePayload(input1._2))
+    processor.state.get(ByteBuffer.wrap(r1.bytes)).get.equals(input1._2) should be(true)
+    processor.state.get(ByteBuffer.wrap(a1.bytes)).get.equals(input2._2) should be(true)
     state.size should be(2)
     state.get(r1).get should be(inputMap1)
     state.get(a1).get should be(inputMap2)
@@ -49,7 +51,7 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
 
   it should "yield intermediate state for first sync pair (r->a2)" in {
     val input = encode(r1, (1.toByte, Map(a2 -> aatEdge(0.5, 2))))
-    val output = processRecursively(ByteBuffer.wrap(input._1), ByteBuffer.wrap(input._2))
+    val output = processRecursively(input._1, input._2)
     output.size should be(8)
     print(output)
     val state = getState
@@ -67,7 +69,7 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
 
   it should "yield final correct state for the second sync pair (a2->r)" in {
     val input = encode(a2, (1.toByte, Map(r1 -> aatEdge(0.5, 2))))
-    val output = processRecursively(ByteBuffer.wrap(input._1), ByteBuffer.wrap(input._2))
+    val output = processRecursively(input._1, input._2)
     output.size should be(1)
     print(output)
     val state = getState
@@ -81,9 +83,9 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
   }
   it should "yield final correct state for another sync (r2->a2, a2->r2)" in {
     val input1 = encode(a2, (1.toByte, Map(r2 -> aatEdge(0.8, 3))))
-    val output1 = processRecursively(ByteBuffer.wrap(input1._1), ByteBuffer.wrap(input1._2))
+    val output1 = processRecursively(input1._1, input1._2)
     val input2 = encode(r2, (1.toByte, Map(a2 -> aatEdge(0.8, 3))))
-    val output2 = processRecursively(ByteBuffer.wrap(input2._1), ByteBuffer.wrap(input2._2))
+    val output2 = processRecursively(input2._1, input2._2)
     output1.size should be(9)
     print(output1)
     val state = getState
@@ -108,8 +110,8 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
     })
   }
 
-  private def message(topic: String, encoded: (Array[Byte], Array[Byte])) = {
-    new KeyedMessage(topic, ByteBuffer.wrap(encoded._1), ByteBuffer.wrap(encoded._2))
+  private def message(topic: String, encoded: (ByteBuffer, ByteBuffer)) = {
+    new KeyedMessage(topic, encoded._1, encoded._2)
   }
 
   private def encode(key: Vid, payload: (Byte, Map[Vid, Edge]))

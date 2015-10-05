@@ -15,9 +15,9 @@ object GraphStatePrinter {
     config.load( new FileInputStream(args(0)))
     val minEdges = args(1).toInt
     val kafkaUtils = new KafkaUtils(config)
-    kafkaUtils.createDebugConsumer("graphstate", (msg) => {
-      val vid = BSPMessage.decodeKey(msg.key)
-      val payload = msg.message match {
+    kafkaUtils.createDebugConsumer("graphstate", (key, msg) => {
+      val vid = BSPMessage.decodeKey(key)
+      val payload = msg match {
         case null => null
         case x => BSPMessage.decodePayload(x)
       }

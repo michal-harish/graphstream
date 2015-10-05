@@ -86,7 +86,7 @@ class GraphToHBaseProcessingUnit(config: Properties, logicalPartition: Int, tota
             if (payload == null) {
               compactedQueue.put(key, null)
             } else {
-              val addedEdges = BSPMessage.decodePayload(payload.array, payload.arrayOffset)._2
+              val addedEdges = BSPMessage.decodePayload(payload)._2
               if (!compactedQueue.containsKey(key)) {
                 compactedQueue.put(key, addedEdges)
               } else compactedQueue.get(key) match {

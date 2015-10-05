@@ -23,10 +23,10 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
   val state: MemStore = new MemStoreMemDb(maxStateSizeMb)
 
   val stateIn = new AtomicLong(0)
-  val bspIn = new AtomicLong(0)
-  val bspEvicted = new AtomicLong(0)
-  val bspMiss = new AtomicLong(0)
-  val bspUpdated = new AtomicLong(0)
+  val deltaIn = new AtomicLong(0)
+  val stateEvict = new AtomicLong(0)
+  val stateMiss = new AtomicLong(0)
+  val deltaOut = new AtomicLong(0)
 
   def bootState(key: ByteBuffer, payload: ByteBuffer): Unit = {
     state.put(key, payload)
@@ -39,18 +39,17 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
    * @return list of messages to produce
    */
   def processDeltaInput(key:ByteBuffer, payload: ByteBuffer): List[MESSAGE] = {
-    bspIn.incrementAndGet
+    deltaIn.incrementAndGet
     val output = List.newBuilder[MESSAGE]
-    state.get(key) match {
+    state.get(key, b => b) match {
       case None => {
-        bspMiss.incrementAndGet
+        stateMiss.incrementAndGet
         output += updateState(key, payload)
       }
-      case Some(null) => bspEvicted.incrementAndGet
+      case Some(null) => stateEvict.incrementAndGet
 
       case Some(previousState) => {
-        bspUpdated.incrementAndGet
-        val (iteration, inputEdges) = BSPMessage.decodePayload(payload.array, payload.arrayOffset)
+        val (iteration, inputEdges) = BSPMessage.decodePayload(payload)
         val existingEdges = BSPMessage.decodePayload(previousState)._2
 
         val evictedEdges = inputEdges.filter{
@@ -76,8 +75,9 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
         }
       }
     }
-    output.result
-
+    val outputMessages = output.result
+    deltaOut.addAndGet(outputMessages.size)
+    outputMessages
   }
 
   /**
@@ -96,26 +96,13 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
       } else {
         val destKey = BSPMessage.encodeKey(destVid)
         val payload = BSPMessage.encodePayload(((iteration + 1).toByte, propagateEdges))
-        Seq(new KeyedMessage("graphdelta", ByteBuffer.wrap(destKey), ByteBuffer.wrap(payload)))
+        Seq(new KeyedMessage("graphdelta", destKey, payload))
       }
     }}
   }
 
-  private def updateState(key: ByteBuffer, payload: Array[Byte]): MESSAGE = {
-    state.put(key, payload)
-    if (payload == null) {
-      new KeyedMessage("graphstate", key, null)
-    } else {
-      new KeyedMessage("graphstate", key, ByteBuffer.wrap(payload))
-    }
-  }
-
   private def updateState(key: ByteBuffer, payload: ByteBuffer): MESSAGE = {
-    if (payload == null) {
-      state.put(key, null.asInstanceOf[Array[Byte]])
-    } else {
-      state.put(key, payload)
-    }
+    state.put(key, payload)
     new KeyedMessage("graphstate", key, payload)
   }
 

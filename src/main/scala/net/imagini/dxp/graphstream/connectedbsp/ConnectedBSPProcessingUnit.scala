@@ -1,6 +1,7 @@
 package net.imagini.dxp.graphstream.connectedbsp
 
 import java.util.Properties
+import java.util.concurrent.atomic.AtomicLong
 
 import kafka.message.MessageAndOffset
 import net.imagini.dxp.common.VidKafkaPartitioner
@@ -23,12 +24,26 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
     stateProducer.close
   }
 
+  @volatile var ts = System.currentTimeMillis
+
   override def awaitingTermination {
+    val period = (System.currentTimeMillis.toDouble - ts) / 1000
+    val stateInPerSec = (processor.stateIn.get / period).toLong
+    val deltaInPerSec = (processor.deltaIn.get / period).toLong
+    val deltaOutPerSec = (processor.deltaOut.get / period).toLong
     println(
-      s"=> graphdelta(${processor.bspIn.get} - evicted ${processor.bspEvicted.get} + missed ${processor.bspMiss.get} + hit ${processor.bspUpdated.get}) " +
-        s"=> graphstate(${processor.stateIn.get}) " +
+      s"=> graphdelta-input(${deltaInPerSec}/sec) evicted ${processor.stateEvict.get}  missed ${processor.stateMiss.get})" +
+        s"=> graphstate-input(${stateInPerSec}/sec) " +
+        s"=> output(${deltaOutPerSec}/sec) " +
         s"=> state.size = " + processor.state.size + ", state.memory = " + processor.state.minSizeInBytes / 1024 / 1024 + " Mb"
     )
+    ts = System.currentTimeMillis
+    processor.stateIn.set(0)
+    processor.deltaIn.set(0)
+    processor.stateEvict.set(0)
+    processor.stateMiss.set(0)
+    processor.deltaOut.set(0)
+
   }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {

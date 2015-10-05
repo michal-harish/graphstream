@@ -81,7 +81,7 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
 
     println(s"COMPLETED, PRODUCED MESSAGES: ${counterProduced}")
     println(s"COMPLETED, IGNORED LINES: ${counterIgnored}")
-    println(s"COMPLETED, PRODUCED MESSAGES: ${counterInvalid}")
+    println(s"COMPLETED, INVALID MESSAGES: ${counterInvalid}")
 
   }
 
@@ -103,8 +103,8 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
       }
       produce(new KeyedMessage(
         "graphdelta",
-        ByteBuffer.wrap(BSPMessage.encodeKey(pair._1)),
-        ByteBuffer.wrap(BSPMessage.encodePayload((1, Map(pair._2))))))
+        BSPMessage.encodeKey(pair._1),
+        BSPMessage.encodePayload((1, Map(pair._2)))))
       return
     } catch {
       case e: IOException => {
