@@ -130,7 +130,7 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
   }
 
   private def print(state: Map[Vid, Map[Vid, Edge]]) = {
-    println("== STATE ================================================================================================")
+    println(s"== STATE ${processor.state.size} =======================================================================")
     getState.foreach(x => println(s"${x._1} -> ${x._2}"))
     println("=========================================================================================================")
   }

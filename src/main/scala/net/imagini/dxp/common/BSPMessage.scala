@@ -12,11 +12,9 @@ object BSPMessage {
 
   def encodeKey(key: Vid): ByteBuffer = ByteBuffer.wrap(key.bytes)
 
-  def decodeKey(key: ByteBuffer): Vid = {
-    Vid(util.Arrays.copyOfRange(key.array, key.arrayOffset, key.arrayOffset + key.remaining))
-  }
+  def decodeKey(key: ByteBuffer): Vid = Vid(ByteUtils.bufToArray(key))
 
-  def encodePayload(payload: (Byte, Map[Vid, Edge])): ByteBuffer  = {
+  def encodePayload(payload: (Byte, Map[Vid, Edge])): ByteBuffer = {
     val (iter, edges) = payload
     val len = edges.foldLeft(1 + 2)((l, item) => l + 8 + 1 + item._1.bytes.length + 4)
     val result = ByteBuffer.allocate(len)

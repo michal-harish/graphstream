@@ -16,12 +16,13 @@ class BSPMessageTest extends FlatSpec with Matchers {
 
     val edges = Map(Vid("a", "1") -> Edge("AAT", 1.0, 1000L))
     val bytes = BSPMessage.encodePayload((5, edges)).array
+
     bytes.map(_ & 0xff) should be (Seq(
       5, //iteration
       0,1,  //number of edges
         0,0,0,0,0,0,3,232, // ts
         //edge target vid:
-        14, 0,0,0,0,  0,97, 0,0,0,0,0,0,0,2,
+        14, 127, 255, 255, 255,  0,97, 0,0,0,0,0,0,0,2,
         //edge structure:
           1,    //version
           255,  //probability 1/x

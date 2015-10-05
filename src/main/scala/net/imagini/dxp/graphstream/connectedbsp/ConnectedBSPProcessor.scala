@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import kafka.producer.KeyedMessage
 import net.imagini.dxp.common.{Vid, Edge, BSPMessage}
-import org.apache.donut.memstore.{MemStore, MemStoreMemDb}
+import org.apache.donut.memstore.{MemStoreLogMap, MemStore, MemStoreMemDb}
 
 /**
  * Created by mharis on 26/09/15.

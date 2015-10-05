@@ -36,7 +36,13 @@ object Vid {
   def apply(id: Array[Byte]): Vid = {
     val idSpace: Short = IdSpace(id, 0, id.length)
     val isVdna: Boolean = idSpace == IdSpace.vdna
-    new Vid(isVdna, idSpace, id, ByteUtils.asIntValue(id))
+    ByteUtils.asIntValue(id) match {
+      case 0 | Int.MinValue => {
+        ByteUtils.putIntValue(Int.MaxValue, id, 0)
+        new Vid(isVdna, idSpace, id, Int.MaxValue)
+      }
+      case h => new Vid(isVdna, idSpace, id, h)
+    }
   }
 
   def comparator(a: Vid, b: Vid) = a.compareTo(b) < 0
