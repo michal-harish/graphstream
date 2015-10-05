@@ -37,7 +37,7 @@ The GraphStream Application consists roughly of 3 stages each with one or more c
 
 ![Architecture](doc/GraphStream_architecture.png)
 
-While SyncsToGraph is a simple stream-to-stream map operation, the internal workings of ConnectedBSP requires a more detailed explanation. It also illustrates more general concept of local state in the realm of stream processing, more specifically *recurisve stateful stream processing*
+While SyncsToGraph ahd GraphToHBase are simple stream-to-stream filter/map operators, the internal workings of ConnectedBSP requires a more detailed explanation. It also illustrates a general idea of local state in the realm of stream processing, and more specifically also *recurisve stateful stream processing*
 
 First we need a different kind of topic - a commit log which is supported by Kafka fetaure called [Log  Compaction](https://cwiki.apache.org/confluence/display/KAFKA/Log+Compaction). A topic 'graphstate' in our architecture is log-compacted.
 
@@ -65,7 +65,7 @@ kafka.brokers=message-01.prod.visualdna.com:9092,message-02.prod.visualdna.com:9
 hbase.site=/etc/hbase/conf.prod
 ```
 
-NOTE: The `yarn1.classpath` means that we have already distributed large fat jars of scala-library and kafka so that we can have them here provided and distribute only a relatively thin jar each time we create a YARN launch context. There is a managed sys/scala-deploy repository which automatically distributes any added jar into /opt/scala/ location on every cluster node when Jenkins Global deploy sys/scala-deploy job is run.
+NOTE: The `yarn1.classpath` means that we have already distributed large fat jars of scala-library and kafka so that we can have them here provided and distribute only a relatively thin jar each time we create a YARN launch context.
 
 <a name="operations">
 ## Operations
@@ -176,14 +176,12 @@ By default, IntelliJ should preserve these added folders on re-import but in cas
 ### Launching the application from IntelliJ
 
 For launching the application from within the IntelliJ runtime there are several starting points all which are located in the *test* source net.imagini.dxp.graphstream.Launchers.scala.
-The reason for test package is that many dependencies are provided and not available without hadoop/yarn environment but provided scope is available in the maven test phase:
-There are two components(see [architecture](#architecture) above) and each has 2 different launchers:
+The reason for the test package is that many dependencies are provided and not available without hadoop/yarn environment but provided scope is available in the maven test phase. There are two components(see [architecture](#architecture) above) and each has 2 different launchers:
 
 1. YarnLaunch - submits the application to the YARN cluster and waits for completion printing any progress - stopping the application will attempt to kill the yarn context as well from the shutdown hook
 2. LocalLaunch - is for debugging and doesn't actually submit the application to yarn and all streaming and processing happens locally
 
 ### TODOs  
 - Evicted keys should be also recorded in graphdelta topic so that hbase loader can pick it up and remove the row
-- Zero copy transitions Kafka Input -> State -> Kafka Output (also currently ByteBuffer.array is used but some buffers may be direct)
 - Edges should not be represented as Map[Vid, EdgeProps] but rather Set[Edge] where Edge object would contain the dest Vid to allow for duplicate connections with different properties 
-- SyncsToGraph could have a state for short window for per-cookie counters to detected robots  
+- SyncsToGraph could have a for short window memstore for better detection of bad data, robots, etc.  
