@@ -21,8 +21,8 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
   private val MAX_EDGES = 99
 
   val directMemoryOverheadMb = 100
-  val memstore: MemStore = new MemStoreMemDb((maxStateSizeMb - directMemoryOverheadMb) / 2)
-  val altstore: MemStore = new MemStoreLogMap((maxStateSizeMb - directMemoryOverheadMb) / 2)
+  val memstore: MemStore = new MemStoreMemDb((maxStateSizeMb - directMemoryOverheadMb))
+  //val altstore: MemStore = new MemStoreLogMap((maxStateSizeMb - directMemoryOverheadMb))
 
   val invalid = new AtomicLong(0)
   val stateIn = new AtomicLong(0)
@@ -31,33 +31,41 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
   val stateMiss = new AtomicLong(0)
   val deltaOut = new AtomicLong(0)
 
-  def bootState(msgKey: ByteBuffer, payload: ByteBuffer): Unit = {
+  def bootState(msgKey: ByteBuffer, payload: ByteBuffer): List[MESSAGE]  = {
     val vid = BSPMessage.decodeKey(msgKey)
     BSPMessage.encodeKey(vid) match {
-      case invalidKey if (!invalidKey.equals(msgKey)) => invalid.incrementAndGet
+      case invalidKey if (!invalidKey.equals(msgKey)) => {
+        invalid.incrementAndGet
+        List(updateState(msgKey, null))
+      }
       case validKey => BSPMessage.decodePayload(payload) match {
+        case null => List()
         case (i, edges) => {
           BSPMessage.encodePayload((i, edges)) match {
-            case invalidPayload if (!invalidPayload.equals(payload)) => invalid.incrementAndGet
+            case invalidPayload if (!invalidPayload.equals(payload)) => {
+              invalid.incrementAndGet
+              List(updateState(msgKey, null))
+            }
             case validPayload => {
               memstore.put(validKey, validPayload)
-              altstore.put(validKey, validPayload)
-              //compare memstore and altstore
-              memstore.get(validKey) match {
-                case None => throw new IllegalStateException
-                case Some(value) => {
-                  val (ri, redges) = BSPMessage.decodePayload(value)
-                  if (edges != redges) throw new IllegalStateException()
-                  altstore.get(validKey) match {
-                    case None => throw new IllegalStateException
-                    case Some(altVallue) => {
-                      val (ai, aedges) = BSPMessage.decodePayload(value)
-                      if (edges != aedges) throw new IllegalStateException()
-                    }
-                  }
-                }
-              }
+//              altstore.put(validKey, validPayload)
+//              //compare memstore and altstore
+//              memstore.get(validKey) match {
+//                case None => throw new IllegalStateException
+//                case Some(value) => {
+//                  val (ri, redges) = BSPMessage.decodePayload(value)
+//                  if (edges != redges) throw new IllegalStateException()
+//                  altstore.get(validKey) match {
+//                    case None => throw new IllegalStateException
+//                    case Some(altVallue) => {
+//                      val (ai, aedges) = BSPMessage.decodePayload(value)
+//                      if (edges != aedges) throw new IllegalStateException()
+//                    }
+//                  }
+//                }
+//              }
               stateIn.incrementAndGet
+              List()
             }
           }
         }

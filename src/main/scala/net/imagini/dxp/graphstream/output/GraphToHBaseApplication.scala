@@ -21,7 +21,7 @@ class GraphToHBaseApplication(config: Properties) extends DonutApp[GraphToHBaseP
   config.setProperty("topics", "graphdelta")
   config.setProperty("direct.memory.mb", "0") // 0 - no local state for simple stream-to-stream transformation
   config.setProperty("task.overhead.memory.mb", "1536") //1.5g - microbatching multi-puts to hbase generates a lot of objects in the process
-  config.setProperty("task.jvm.args", "-XX:NewRatio=3 -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
+  config.setProperty("yarn1.jvm.args", "-XX:+UseSerialGC -XX:NewRatio=3 -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config.setProperty("yarn1.restart.enabled", "true")
   config.setProperty("hbase.table", "dxp-graph-v6")
 

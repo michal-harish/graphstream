@@ -32,21 +32,25 @@ object BSPMessage {
   }
 
   def decodePayload(payload: ByteBuffer): (Byte, Map[Vid, Edge]) = {
-    val p = payload.position
-    val iter = payload.get
-    val size = payload.getShort.toInt
-    val result = (iter, (for (i <- (1 to size)) yield {
-      val ts = payload.getLong
-      val vidBytes = new Array[Byte](payload.get())
-      payload.get(vidBytes)
-      val vid = Vid(vidBytes)
-      val edgeBytes = new Array[Byte](4)
-      payload.get(edgeBytes)
-      val edge = Edge.applyVersion(edgeBytes, ts)
-      (vid, edge)
-    }).toMap)
-    payload.position(p)
-    result
+    if (payload == null) {
+      null
+    } else {
+      val p = payload.position
+      val iter = payload.get
+      val size = payload.getShort.toInt
+      val result = (iter, (for (i <- (1 to size)) yield {
+        val ts = payload.getLong
+        val vidBytes = new Array[Byte](payload.get())
+        payload.get(vidBytes)
+        val vid = Vid(vidBytes)
+        val edgeBytes = new Array[Byte](4)
+        payload.get(edgeBytes)
+        val edge = Edge.applyVersion(edgeBytes, ts)
+        (vid, edge)
+      }).toMap)
+      payload.position(p)
+      result
+    }
   }
 
 }

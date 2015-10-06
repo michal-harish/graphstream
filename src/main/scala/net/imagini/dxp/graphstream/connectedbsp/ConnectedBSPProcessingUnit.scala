@@ -35,8 +35,8 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
       s"missed:${processor.stateMiss.get}) => graphstate-input(${stateInPerSec}/sec) => output(${deltaOutPerSec}/sec)")
     println(s"memstore.size = " + processor.memstore.size + "  memstore.mb = "
       + processor.memstore.sizeInBytes / 1024 / 1024 + " Mb  memstore.c = " + processor.memstore.compressRatio)
-    println(s"altstore.size = " + processor.altstore.size + "  altstore.mb = "
-      + processor.altstore.sizeInBytes / 1024 / 1024 + " Mb  altstore.c = " + processor.altstore.compressRatio)
+//    println(s"altstore.size = " + processor.altstore.size + "  altstore.mb = "
+//      + processor.altstore.sizeInBytes / 1024 / 1024 + " Mb  altstore.c = " + processor.altstore.compressRatio)
     println(s"")
 
     ts = System.currentTimeMillis
@@ -54,7 +54,8 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
       case "graphstate" => new FetcherBootstrap(this, topic, partition, groupId) {
         def handleMessage(messageAndOffset: MessageAndOffset): Unit = {
           if (!isBooted) {
-            processor.bootState(messageAndOffset.message.key, messageAndOffset.message.payload)
+            val outputMessages = processor.bootState(messageAndOffset.message.key, messageAndOffset.message.payload)
+            produce(outputMessages)
           }
         }
       }
@@ -62,15 +63,21 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
       case "graphdelta" => new FetcherDelta(this, topic, partition, groupId) {
         override def handleMessage(envelope: MessageAndOffset): Unit = {
           val outputMessages = processor.processDeltaInput(envelope.message.key, envelope.message.payload)
-          outputMessages.foreach(message =>
-            message.topic match {
-              case "graphdelta" => deltaProducer.send(message)
-              case "graphstate" => stateProducer.send(message)
-            })
+          produce(outputMessages)
+
         }
       }
     }
   }
+
+  private def produce(outputMessages: List[processor.MESSAGE]) = {
+    outputMessages.foreach(message =>
+      message.topic match {
+        case "graphdelta" => deltaProducer.send(message)
+        case "graphstate" => stateProducer.send(message)
+      })
+  }
+
 
 }
 
