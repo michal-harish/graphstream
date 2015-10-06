@@ -14,19 +14,15 @@ import org.apache.donut.DonutApp
 
 class GraphToHBaseApplication(config: Properties) extends DonutApp[GraphToHBaseProcessingUnit]({
 
-  val directMemMb = 512
-  val heapMemMb = 1024
-  /**
-   * Memory Footprint (32 partitions in one topic) = 32 x 1.5Gb = 48 Gb
-   */
+  //Memory Footprint (32 partitions in one topic) = 32 x 1.5Gb = 48 Gb
   config.setProperty("group.id", "GraphstreamHBaseLoader")
   config.setProperty("task.memory.mb", "1024")
   config.setProperty("cogroup", "false")
   config.setProperty("topics", "graphdelta")
+  config.setProperty("direct.memory.mb", "0") // 0 - no local state for simple stream-to-stream transformation
+  config.setProperty("task.overhead.memory.mb", "1536") //1.5g - microbatching multi-puts to hbase generates a lot of objects in the process
+  config.setProperty("task.jvm.args", "-XX:NewRatio=3 -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config.setProperty("yarn1.restart.enabled", "true")
-  config.setProperty("task.memory.mb", s"${directMemMb + heapMemMb}")
-  config.setProperty("state.memory.mb", s"${directMemMb}")
-  config.setProperty("yarn1.jvm.args", s"-XX:MaxDirectMemorySize=${directMemMb}m -Xmx${heapMemMb}m -Xms${heapMemMb}m -XX:NewRatio=3 -XX:+UseG1GC -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config.setProperty("hbase.table", "dxp-graph-v6")
 
   config

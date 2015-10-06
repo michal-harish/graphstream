@@ -55,33 +55,38 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
     var counterInvalid = 0L
     var counterProduced = 0L
 
-    for (ln <- Source.stdin.getLines) {
-      try {
-        processLine(ln) match {
-          case None => {
-            counterIgnored += 1L
-            if (counterIgnored % 1000000 == 0) {
-              println(s"IGNORED LINES: ${counterIgnored} ...")
+    try {
+      for (ln <- Source.stdin.getLines) {
+        try {
+          if (ln == null) {
+            return
+          } else processLine(ln) match {
+            case None => {
+              counterIgnored += 1L
+              if (counterIgnored % 1000000 == 0) {
+                println(s"IGNORED LINES: ${counterIgnored} ...")
+              }
+            }
+            case Some(couple) => {
+              produce(couple(0))
+              counterProduced += 1L
+              produce(couple(1))
+              counterProduced += 1L
+              if (counterProduced % 1000000 <= 1) {
+                println(s"PRODUCED MESSAGES: ${counterProduced} ...")
+              }
             }
           }
-          case Some(couple) => {
-            produce(couple(0))
-            counterProduced += 1L
-            produce(couple(1))
-            counterProduced += 1L
-            if (counterProduced % 1000000 <= 1) {
-              println(s"PRODUCED MESSAGES: ${counterProduced} ...")
-            }
-          }
+        } catch {
+          case e: IllegalArgumentException => counterInvalid += 1L
         }
-      } catch {
-        case e: IllegalArgumentException => counterInvalid += 1L
       }
-    }
 
-    println(s"COMPLETED, PRODUCED MESSAGES: ${counterProduced}")
-    println(s"COMPLETED, IGNORED LINES: ${counterIgnored}")
-    println(s"COMPLETED, INVALID MESSAGES: ${counterInvalid}")
+    } finally {
+      println(s"COMPLETED, PRODUCED MESSAGES: ${counterProduced}")
+      println(s"COMPLETED, IGNORED LINES: ${counterIgnored}")
+      println(s"COMPLETED, INVALID MESSAGES: ${counterInvalid}")
+    }
 
   }
 
@@ -145,7 +150,6 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
       }
     }
   }
-
 
 
 }

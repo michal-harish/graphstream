@@ -19,22 +19,14 @@ import org.apache.donut.DonutApp
 
 class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPProcessingUnit]({
 
-  val directMemMb = 6144
-  val heapMemMb = 2048
-  /**
-   * Memory Footprint (32 partitions in both topics) = 32 x (6g + 2g) = 256 Gb
-   */
+  // Memory Footprint (32 partitions in both topics) = 300g + (32 x 2g overhead) = 332 Gb
   config.setProperty("group.id", "GraphStreamingBSP")
   config.setProperty("topics", "graphdelta,graphstate")
   config.setProperty("cogroup", "true")
+  config.setProperty("direct.memory.mb",      "307200")  // 300g main memory for the whole job
+  config.setProperty("task.overhead.memory.mb", "2048")  //  +2g heap overhead per task
+  config.setProperty("task.jvm.args", "-XX:NewRatio=2 -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config.setProperty("yarn1.restart.enabled", "true")
   config.setProperty("yarn1.restart.failed.retries", "3")
-
-  //TODO config.setProperty("task.direct.memory.mb", s"${directMemMb}")
-  //TODO config.setProperty("task.heap.memory.mb", s"${heapMemMb}")
-  config.setProperty("task.memory.mb", s"${directMemMb + heapMemMb}")
-  config.setProperty("state.memory.mb", s"${directMemMb}")
-
-  config.setProperty("yarn1.jvm.args", s"-XX:MaxDirectMemorySize=${directMemMb}m -Xmx${heapMemMb}m -Xms${heapMemMb}m -XX:NewRatio=2 -XX:+UseSerialGC -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config
 })

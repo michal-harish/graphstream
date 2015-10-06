@@ -37,13 +37,13 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
     print(output2)
     val state = getState
     print(state)
-    processor.state.size should be(2)
-    processor.state.contains(ByteBuffer.wrap(r1.bytes)) should be(true)
-    processor.state.contains(ByteBuffer.wrap(a1.bytes)) should be(true)
-    println(BSPMessage.decodePayload(processor.state.get(ByteBuffer.wrap(r1.bytes)).get))
+    processor.memstore.size should be(2)
+    processor.memstore.contains(ByteBuffer.wrap(r1.bytes)) should be(true)
+    processor.memstore.contains(ByteBuffer.wrap(a1.bytes)) should be(true)
+    println(BSPMessage.decodePayload(processor.memstore.get(ByteBuffer.wrap(r1.bytes)).get))
     println(BSPMessage.decodePayload(input1._2))
-    processor.state.get(ByteBuffer.wrap(r1.bytes)).get.equals(input1._2) should be(true)
-    processor.state.get(ByteBuffer.wrap(a1.bytes)).get.equals(input2._2) should be(true)
+    processor.memstore.get(ByteBuffer.wrap(r1.bytes)).get.equals(input1._2) should be(true)
+    processor.memstore.get(ByteBuffer.wrap(a1.bytes)).get.equals(input2._2) should be(true)
     state.size should be(2)
     state.get(r1).get should be(inputMap1)
     state.get(a1).get should be(inputMap2)
@@ -118,7 +118,7 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
   = (BSPMessage.encodeKey(key), BSPMessage.encodePayload(payload))
 
   private def getState: Map[Vid, Map[Vid, Edge]] = {
-    processor.state.iterator.map { case (keyBytes, valBytes) =>
+    processor.memstore.iterator.map { case (keyBytes, valBytes) =>
       BSPMessage.decodeKey(keyBytes) -> BSPMessage.decodePayload(valBytes)._2
     }.toMap
   }
@@ -130,7 +130,7 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
   }
 
   private def print(state: Map[Vid, Map[Vid, Edge]]) = {
-    println(s"== STATE ${processor.state.size} =======================================================================")
+    println(s"== STATE ${processor.memstore.size} =======================================================================")
     getState.foreach(x => println(s"${x._1} -> ${x._2}"))
     println("=========================================================================================================")
   }

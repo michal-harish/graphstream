@@ -16,7 +16,7 @@ import org.apache.donut.KafkaUtils
  */
 
 object ConnectedBSPLocalLauncher extends App {
-  new ConnectedBSPApplication(Config).runLocally(multiThreadMode = false)
+  new ConnectedBSPApplication(Config).runLocally(testOnlyOnePartition = true)
 }
 
 object ConnectedBSPYarnLauncher extends App {
@@ -24,7 +24,7 @@ object ConnectedBSPYarnLauncher extends App {
 }
 
 object SyncsToGraphLocalLauncher extends App {
-  new SyncsToGraphApplication(Config).runLocally(multiThreadMode = false)
+  new SyncsToGraphApplication(Config).runLocally(testOnlyOnePartition = true)
 }
 
 object SyncsToGraphYarnLauncher extends App {
@@ -32,7 +32,7 @@ object SyncsToGraphYarnLauncher extends App {
 }
 
 object GraphToHBaseLocalLauncher extends App {
-  new GraphToHBaseApplication(Config).runLocally(multiThreadMode = false)
+  new GraphToHBaseApplication(Config).runLocally(testOnlyOnePartition = true)
 }
 
 object GraphToHBaseYarnLauncher extends App {

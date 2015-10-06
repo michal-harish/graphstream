@@ -20,17 +20,49 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
   val MAX_ITERATIONS = 3
   private val MAX_EDGES = 99
 
-  val state: MemStore = new MemStoreMemDb(maxStateSizeMb)
+  val directMemoryOverheadMb = 100
+  val memstore: MemStore = new MemStoreMemDb((maxStateSizeMb - directMemoryOverheadMb) / 2)
+  val altstore: MemStore = new MemStoreLogMap((maxStateSizeMb - directMemoryOverheadMb) / 2)
 
+  val invalid = new AtomicLong(0)
   val stateIn = new AtomicLong(0)
   val deltaIn = new AtomicLong(0)
   val stateEvict = new AtomicLong(0)
   val stateMiss = new AtomicLong(0)
   val deltaOut = new AtomicLong(0)
 
-  def bootState(key: ByteBuffer, payload: ByteBuffer): Unit = {
-    state.put(key, payload)
-    stateIn.incrementAndGet
+  def bootState(msgKey: ByteBuffer, payload: ByteBuffer): Unit = {
+    val vid = BSPMessage.decodeKey(msgKey)
+    BSPMessage.encodeKey(vid) match {
+      case invalidKey if (!invalidKey.equals(msgKey)) => invalid.incrementAndGet
+      case validKey => BSPMessage.decodePayload(payload) match {
+        case (i, edges) => {
+          BSPMessage.encodePayload((i, edges)) match {
+            case invalidPayload if (!invalidPayload.equals(payload)) => invalid.incrementAndGet
+            case validPayload => {
+              memstore.put(validKey, validPayload)
+              altstore.put(validKey, validPayload)
+              //compare memstore and altstore
+              memstore.get(validKey) match {
+                case None => throw new IllegalStateException
+                case Some(value) => {
+                  val (ri, redges) = BSPMessage.decodePayload(value)
+                  if (edges != redges) throw new IllegalStateException()
+                  altstore.get(validKey) match {
+                    case None => throw new IllegalStateException
+                    case Some(altVallue) => {
+                      val (ai, aedges) = BSPMessage.decodePayload(value)
+                      if (edges != aedges) throw new IllegalStateException()
+                    }
+                  }
+                }
+              }
+              stateIn.incrementAndGet
+            }
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -38,10 +70,10 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
    * @param payload =
    * @return list of messages to produce
    */
-  def processDeltaInput(key:ByteBuffer, payload: ByteBuffer): List[MESSAGE] = {
+  def processDeltaInput(key: ByteBuffer, payload: ByteBuffer): List[MESSAGE] = {
     deltaIn.incrementAndGet
     val output = List.newBuilder[MESSAGE]
-    state.get(key, b => b) match {
+    memstore.get(key, b => b) match {
       case None => {
         stateMiss.incrementAndGet
         output += updateState(key, payload)
@@ -52,12 +84,15 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
         val (iteration, inputEdges) = BSPMessage.decodePayload(payload)
         val existingEdges = BSPMessage.decodePayload(previousState)._2
 
-        val evictedEdges = inputEdges.filter{
-          case (inDest, inProps) => inProps.probability == 0 && existingEdges.contains(inDest)}.map(_._1)
+        val evictedEdges = inputEdges.filter {
+          case (inDest, inProps) => inProps.probability == 0 && existingEdges.contains(inDest)
+        }.map(_._1)
 
         val additionalEdges = inputEdges.filter {
           case (inDest, inProps) => inProps.probability > 0 && !existingEdges.exists {
-            case (exDest, exProps) => exDest == inDest && exProps.probability >= inProps.probability}}
+            case (exDest, exProps) => exDest == inDest && exProps.probability >= inProps.probability
+          }
+        }
 
         val newState = existingEdges ++ additionalEdges -- evictedEdges
         if (newState.size > MAX_EDGES) {
@@ -66,7 +101,7 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
           val evictEdge = Edge(Edge.VENDOR_CODE_UNKNOWN, 0.0, System.currentTimeMillis)
           output ++= propagateEdges(iteration, Map(evictDest -> evictEdge), existingEdges)
           output += updateState(key, null.asInstanceOf[ByteBuffer])
-        } else if (additionalEdges.size > 0 || evictedEdges.size >0) {
+        } else if (additionalEdges.size > 0 || evictedEdges.size > 0) {
           if (iteration < MAX_ITERATIONS && additionalEdges.size > 0) {
             output ++= propagateEdges(iteration, newState, existingEdges)
             output ++= propagateEdges(iteration, existingEdges, newState)
@@ -98,11 +133,12 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
         val payload = BSPMessage.encodePayload(((iteration + 1).toByte, propagateEdges))
         Seq(new KeyedMessage("graphdelta", destKey, payload))
       }
-    }}
+    }
+    }
   }
 
   private def updateState(key: ByteBuffer, payload: ByteBuffer): MESSAGE = {
-    state.put(key, payload)
+    memstore.put(key, payload)
     new KeyedMessage("graphstate", key, payload)
   }
 
