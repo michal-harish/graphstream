@@ -42,7 +42,7 @@ class SyncsToGraphProcessingUnit(config: Properties, logicalPartition: Int, tota
       case "datasync" => new FetcherDelta(this, topic, partition, groupId) {
         override def handleMessage(messageAndOffset: MessageAndOffset): Unit = {
           val payload = messageAndOffset.message.payload
-          //FIXME now that we have ByteBuffers vdna decoder should support offset to deserialize from
+          //TODO now that we have ByteBuffers vdna decoder should support offset to deserialize from
           val payloadArray: Array[Byte] = util.Arrays.copyOfRange(payload.array, payload.arrayOffset, payload.arrayOffset + payload.remaining)
           val vdnaMsg = vdnaMessageDecoder.decodeBytes(payloadArray)
           if (vdnaMsg.isInstanceOf[VDNAUserImport]) {

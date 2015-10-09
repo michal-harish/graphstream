@@ -104,13 +104,13 @@ log.cleaner.enable=true
 ### Creating normal topics with retention
 
 ```bash
-./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 2 --config cleanup.policy=delete --config retention.bytes=4294967296 
+./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 2 --config cleanup.policy=delete --config retention.bytes=2147483648 
 ```
 
 ### Creating a compacted topic
 And then creating topic with compact cleanup policy
 ```bash
-./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphstate --partitions 32 --replication-factor 1 --config cleanup.policy=compact --config retention.bytes=8589934592 
+./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphstate --partitions 32 --replication-factor 1 --config cleanup.policy=compact --config retention.bytes=4294967296 
 ```
 
 ### Deleting topics
@@ -185,3 +185,5 @@ The reason for the test package is that many dependencies are provided and not a
 - Evicted keys should be also recorded in graphdelta topic so that hbase loader can pick it up and remove the row
 - Edges should not be represented as Map[Vid, EdgeProps] but rather Set[Edge] where Edge object would contain the dest Vid to allow for duplicate connections with different properties 
 - SyncsToGraph could have a for short window memstore for better detection of bad data, robots, etc.  
+
+

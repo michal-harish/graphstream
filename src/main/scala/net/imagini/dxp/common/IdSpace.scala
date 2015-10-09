@@ -24,8 +24,8 @@ object IdSpace {
   val mapping = Map[Short, IdSpace](
     //test identifiers
     new IdSpaceLong("test").keyValue //for unit tests and system tests
-    ,new IdSpaceString("test2").keyValue //for unit tests and system tests
-    ,new IdSpaceLongHash("test3").keyValue //for unit tests and system tests
+    , new IdSpaceString("test2").keyValue //for unit tests and system tests
+    , new IdSpaceLongHash("test3").keyValue //for unit tests and system tests
 
     //universal identifiers
     , (new IdSpaceUUID("idfa") with Mobile).keyValue // Apple IDFA
@@ -34,33 +34,25 @@ object IdSpace {
     , (new IdSpaceHEX("aidmd5") with Mobile).keyValue //Android MD5 hexadecimal of the legacy AID
     , (new IdSpaceUUIDNumeric("waid") with Mobile).keyValue // Windows Adevertising ID, e.g. `2E5BA36FE8E24862BC89CD394440339C`
 
-    //email-derived identifiers
-//    , new IdSpaceEmailHash("mp2eh", "4eXa!Re28Me_E?U+EMefrupu2ucrA5e4E=@y6C7em9BU?@hAN5MeBuQadr=WuSTu").keyValue
-//    , new IdSpaceEmailHash("cu2eh", "CDA1A024B3F7255F1C2DBE1733D43DF02D558DD496D2EE9773FD27F96E168C30").keyValue
-//    , new IdSpaceEmailHash("lso2eh", "sAj4bRaFraquz2R@wr6MEchAthu$eFUS7DuCrecAjustuK$X-6a_A_RUprucrakA").keyValue
-//    , new IdSpaceEmailHash("dv2eh", "puxAdrAcu6=KeFUs$t8232NEs5DRAp3EQUDRaVaxa9Racra8a5ubefaswudre9aX").keyValue
-
-    //cookie identifiers
+    //vendor-specific identifiers
     , (new IdSpaceUUID("vdna") with Cookie).keyValue
     , (new IdSpaceLongPositive("a") with Cookie).keyValue
     , (new IdSpaceString("d") with Cookie).keyValue
     , (new IdSpaceString("r") with Cookie).keyValue
-//    , (new IdSpaceUUID("v") with Cookie).keyValue
-//    , (new IdSpaceUUID("x") with Cookie).keyValue
-//    , (new IdSpaceLongHash("rf") with Cookie).keyValue
-//    , (new IdSpaceUUID("adz_id") with Cookie).keyValue
-//    , (new IdSpaceString("p") with Cookie).keyValue
-//    , (new IdSpaceString("qbit_id") with Cookie).keyValue
-    //, (new IdSpaceString("l") with Cookie).keyValue //TODO //"TA"UUID or 19rhld70kucbsa, e.g. both serdes
-    //, (new IdSpace...("m") with Cookie).keyValue,   //TODO 2 hotspots, otherwise distributed evenly
-    //, (new IdSpaceLong("tu_id") with ???),          //TODO very bad distribution
-    //, (new IdSpaceLong("ne_id") with ???),          //TODO very bad distribution
-    //, (new IdSpaceLong("tm_id") with ???),          //TODO looks ok but check why it works and other longs don't
+    //    , (new IdSpaceUUID("v") with Cookie).keyValue
+    //    , (new IdSpaceUUID("x") with Cookie).keyValue
+    //    , (new IdSpaceLongHash("rf") with Cookie).keyValue
+    //    , (new IdSpaceUUID("adz_id") with Cookie).keyValue
+    //    , (new IdSpaceString("p") with Cookie).keyValue
+    //    , (new IdSpaceString("qbit_id") with Cookie).keyValue
+    //    , (new IdSpaceUUIDNumericNoLeadZeros("ltm_id") with Cookie).keyValue
+    //    , (new IdSpaceUUIDNumeric("i") with Cookie).keyValue
+    //    , (new IdSpaceString("l") with Cookie).keyValue //TODO //"TA"UUID or 19rhld70kucbsa, e.g. both serdes
+    //    , (new IdSpace...("m") with Cookie).keyValue,   //TODO 2 hotspots, otherwise distributed evenly
+    //    , (new IdSpaceLong("tu_id") with ???),          //TODO very bad distribution
+    //    , (new IdSpaceLong("ne_id") with ???),          //TODO very bad distribution
+    //    , (new IdSpaceLong("tm_id") with ???),          //TODO looks ok but check why it works and other longs don't
     //removed - not useful hash of ipv4 (new IdSpaceString("k") with Cookie).keyValue
-
-    //internal vendor identifiers
-//    , (new IdSpaceUUIDNumericNoLeadZeros("ltm_id") with Cookie).keyValue
-//    , (new IdSpaceUUIDNumeric("i") with Cookie).keyValue
     , (new IdSpaceUUIDNumeric("fu_id2") with Internal).keyValue //not found in syncs, crm validation set
     , (new IdSpaceUUIDNumeric("tman_id2") with Internal).keyValue //not found in syncs, crm validation set
     , (new IdSpaceUUIDNumeric("tshop_id2") with Internal).keyValue //not found in syncs, crm validation set
@@ -68,6 +60,13 @@ object IdSpace {
     , (new IdSpaceLong("fu_id") with Internal).keyValue //not found in syncs, crm validation set
     , (new IdSpaceLong("tman_id") with Internal).keyValue //not found in syncs, crm validation set
     , (new IdSpaceLong("tshop_id") with Internal).keyValue //not found in syncs, crm validation set
+
+    //email-derived identifiers
+    //    , new IdSpaceEmailHash("mp2eh", "4eXa!Re28Me_E?U+EMefrupu2ucrA5e4E=@y6C7em9BU?@hAN5MeBuQadr=WuSTu").keyValue
+    //    , new IdSpaceEmailHash("cu2eh", "CDA1A024B3F7255F1C2DBE1733D43DF02D558DD496D2EE9773FD27F96E168C30").keyValue
+    //    , new IdSpaceEmailHash("lso2eh", "sAj4bRaFraquz2R@wr6MEchAthu$eFUS7DuCrecAjustuK$X-6a_A_RUprucrakA").keyValue
+    //    , new IdSpaceEmailHash("dv2eh", "puxAdrAcu6=KeFUs$t8232NEs5DRAp3EQUDRaVaxa9Racra8a5ubefaswudre9aX").keyValue
+
   )
   val symbols: Iterable[String] = mapping.values.map(_.symbol)
 }

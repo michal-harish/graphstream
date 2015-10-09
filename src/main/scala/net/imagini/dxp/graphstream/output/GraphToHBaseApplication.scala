@@ -14,9 +14,9 @@ import org.apache.donut.DonutApp
 
 class GraphToHBaseApplication(config: Properties) extends DonutApp[GraphToHBaseProcessingUnit]({
 
-  //Memory Footprint (32 partitions in one topic) = 32 x 1.5Gb = 48 Gb
+  //Memory Footprint (32 partitions in one topic) = (32 x 1.5Gb) = 48 Gb
   config.setProperty("group.id", "GraphstreamHBaseLoader")
-  config.setProperty("task.memory.mb", "1024")
+  config.setProperty("task.memory.mb", "5000")
   config.setProperty("cogroup", "false")
   config.setProperty("topics", "graphdelta")
   config.setProperty("direct.memory.mb", "0") // 0 - no local state for simple stream-to-stream transformation

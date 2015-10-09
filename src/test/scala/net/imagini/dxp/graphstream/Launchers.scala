@@ -1,10 +1,7 @@
 package net.imagini.dxp.graphstream
 
-import java.io.FileInputStream
-import java.util.Properties
-
 import net.imagini.dxp.graphstream.connectedbsp.{ConnectedBSP, ConnectedBSPApplication}
-import net.imagini.dxp.graphstream.debugging.{GraphDeltaPrinter, GraphStatePrinter}
+import net.imagini.dxp.graphstream.debugging.{GraphStateBuilder, GraphDeltaPrinter, GraphStatePrinter}
 import net.imagini.dxp.graphstream.ingest.{SyncsToGraph, SyncsToGraphApplication}
 import net.imagini.dxp.graphstream.output.{GraphToHBase, GraphToHBaseApplication}
 import org.apache.donut.KafkaUtils
@@ -42,6 +39,10 @@ object GraphToHBaseYarnLauncher extends App {
 /**
  * Debugger launchers
  */
+
+object DebugGraphStateBuilder extends App {
+  new GraphStateBuilder(Config).runLocally(testOnlyOnePartition = true)
+}
 
 object DebugGraphStream extends App {
   GraphStatePrinter.main(Array(Config.path, "2"))

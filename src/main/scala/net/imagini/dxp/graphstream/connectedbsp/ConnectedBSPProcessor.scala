@@ -4,8 +4,8 @@ import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicLong
 
 import kafka.producer.KeyedMessage
-import net.imagini.dxp.common.{Vid, Edge, BSPMessage}
-import org.apache.donut.memstore.{MemStoreLogMap, MemStore, MemStoreMemDb}
+import net.imagini.dxp.common.{BSPMessage, Edge, Vid}
+import org.apache.donut.memstore.{MemStore, MemStoreMemDb}
 
 /**
  * Created by mharis on 26/09/15.
@@ -20,9 +20,7 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
   val MAX_ITERATIONS = 3
   private val MAX_EDGES = 99
 
-  val directMemoryOverheadMb = 100
-  val memstore: MemStore = new MemStoreMemDb((maxStateSizeMb - directMemoryOverheadMb))
-  //val altstore: MemStore = new MemStoreLogMap((maxStateSizeMb - directMemoryOverheadMb))
+  val memstore: MemStore = new MemStoreMemDb(maxStateSizeMb)
 
   val invalid = new AtomicLong(0)
   val stateIn = new AtomicLong(0)
@@ -48,22 +46,6 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
             }
             case validPayload => {
               memstore.put(validKey, validPayload)
-//              altstore.put(validKey, validPayload)
-//              //compare memstore and altstore
-//              memstore.get(validKey) match {
-//                case None => throw new IllegalStateException
-//                case Some(value) => {
-//                  val (ri, redges) = BSPMessage.decodePayload(value)
-//                  if (edges != redges) throw new IllegalStateException()
-//                  altstore.get(validKey) match {
-//                    case None => throw new IllegalStateException
-//                    case Some(altVallue) => {
-//                      val (ai, aedges) = BSPMessage.decodePayload(value)
-//                      if (edges != aedges) throw new IllegalStateException()
-//                    }
-//                  }
-//                }
-//              }
               stateIn.incrementAndGet
               List()
             }

@@ -23,7 +23,7 @@ class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPP
   config.setProperty("group.id", "GraphStreamingBSP")
   config.setProperty("topics", "graphdelta,graphstate")
   config.setProperty("cogroup", "true")
-  config.setProperty("direct.memory.mb",      "204800")  // 200g main memory for the whole job
+  config.setProperty("direct.memory.mb",      "200000")  // 200g
   config.setProperty("task.overhead.memory.mb", "2048")  //  +2g heap overhead per task
   config.setProperty("yarn1.jvm.args", "-XX:+UseSerialGC -XX:NewRatio=2 -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config.setProperty("yarn1.restart.enabled", "true")

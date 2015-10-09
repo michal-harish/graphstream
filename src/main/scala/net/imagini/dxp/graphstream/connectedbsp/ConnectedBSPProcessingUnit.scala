@@ -13,7 +13,7 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
   extends DonutAppTask(config, logicalPartition, totalLogicalPartitions, topics) {
 
   private val processor = new ConnectedBSPProcessor(
-    maxStateSizeMb = config.getProperty("direct.memory.mb").toInt / totalLogicalPartitions, minEdgeProbability = 0.75)
+    maxStateSizeMb = config.getProperty("direct.memory.mb").toInt / totalLogicalPartitions - 256, minEdgeProbability = 0.75)
 
   private val deltaProducer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 1000)
 
@@ -34,11 +34,7 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
     println(s"graphdelta-input(${deltaInPerSec}/sec) invalid:${processor.invalid.get} evicted:${processor.stateEvict.get}" +
       s"missed:${processor.stateMiss.get}) => graphstate-input(${stateInPerSec}/sec) => output(${deltaOutPerSec}/sec)")
     println(s"memstore.size = " + processor.memstore.size + "  memstore.mb = "
-      + processor.memstore.sizeInBytes / 1024 / 1024 + " Mb  memstore.c = " + processor.memstore.compressRatio)
-//    println(s"altstore.size = " + processor.altstore.size + "  altstore.mb = "
-//      + processor.altstore.sizeInBytes / 1024 / 1024 + " Mb  altstore.c = " + processor.altstore.compressRatio)
-    println(s"")
-
+      + processor.memstore.sizeInBytes / 1024 / 1024 + " Mb  memstore.compression = " + processor.memstore.compressRatio)
     ts = System.currentTimeMillis
     processor.stateIn.set(0)
     processor.deltaIn.set(0)
