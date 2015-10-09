@@ -17,6 +17,7 @@ class GraphStateBuilder(config: Properties) extends DonutApp[GraphStateBuilderPr
   config.setProperty("group.id", "DebugGraphStateBuilder")
   config.setProperty("topics", "graphstate")
   config.setProperty("direct.memory.mb", "5000")
+  config.setProperty("max.tasks", "8")
   config.setProperty("task.overhead.memory.mb", "2048") //  +2g heap overhead per task
   config.setProperty("yarn1.jvm.args", "-XX:+UseSerialGC -XX:NewRatio=3 -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config.setProperty("yarn1.restart.enabled", "false")
@@ -31,7 +32,7 @@ class GraphStateBuilderProcessor(config: Properties, logicalPartition: Int, tota
 
   println(s"MAX STATE SIZE IN MB = ${maxStateSizeMb}")
 
-  val altstore = new MemStoreLogMap(maxStateSizeMb, 16, 4 * 65535)
+  val altstore = new MemStoreLogMap(maxStateSizeMb, 8, 4 * 65535)
   val altmap = altstore.map
   var ts = System.currentTimeMillis
   val stateIn = new AtomicLong(0)
@@ -61,19 +62,20 @@ class GraphStateBuilderProcessor(config: Properties, logicalPartition: Int, tota
 
   def buildState(msgKey: ByteBuffer, payload: ByteBuffer) = {
     val vid = BSPMessage.decodeKey(msgKey)
-    BSPMessage.encodeKey(vid) match {
-      case invalidKey if (!invalidKey.equals(msgKey)) => println(s"Invalid Key ${invalidKey}")
-      case validKey => BSPMessage.decodePayload(payload) match {
-        case null => List()
-        case (i, edges) => {
-          BSPMessage.encodePayload((i, edges)) match {
-            case invalidPayload if (!invalidPayload.equals(payload)) => println(s"Invalid Oayload ${invalidPayload}")
-            case validPayload => {
-                altstore.put(validKey, validPayload)
-            }
-          }
-        }
-      }
-    }
+//    BSPMessage.encodeKey(vid) match {
+//      case invalidKey if (!invalidKey.equals(msgKey)) => println(s"Invalid Key ${invalidKey}")
+//      case validKey => BSPMessage.decodePayload(payload) match {
+//        case null => List()
+//        case (i, edges) => {
+//          BSPMessage.encodePayload((i, edges)) match {
+//            case invalidPayload if (!invalidPayload.equals(payload)) => println(s"Invalid Oayload ${invalidPayload}")
+//            case validPayload => {
+//                altstore.put(validKey, validPayload)
+//            }
+//          }
+//        }
+//      }
+//    }
+    altstore.put(msgKey, payload)
   }
 }

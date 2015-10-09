@@ -18,7 +18,7 @@ import scala.io.Source
  *
 
 DATE="2015-09-25"; gunzip -c /storage/fileshare/.. | \
-java -cp graphstream-0.9.jar:/opt/scala/scala-library-2.10.4.jar:/opt/scala/kafka_2.10-0.8.2.1.jar \
+java -cp graphstream-0.9.jar:/opt/scala/scala-library-2.11.5.jar:/opt/scala/kafka_2.11-0.8.2.1.jar \
 net.imagini.dxp.graphstream.ingest.FileToGraph /etc/vdna/graphstream/config.properties "$DATE"
 
  */

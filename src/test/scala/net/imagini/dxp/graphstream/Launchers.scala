@@ -40,16 +40,12 @@ object GraphToHBaseYarnLauncher extends App {
  * Debugger launchers
  */
 
-object DebugGraphStateBuilder extends App {
+object DebugGraphState extends App {
   new GraphStateBuilder(Config).runLocally(testOnlyOnePartition = true)
 }
 
-object DebugGraphStream extends App {
+object DebugGraphDelta extends App {
   GraphStatePrinter.main(Array(Config.path, "2"))
-}
-
-object DebugGraphState extends App {
-  GraphDeltaPrinter.main(Array(Config.path, "2"))
 }
 
 object DebugOffsetReport extends App {

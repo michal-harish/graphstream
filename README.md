@@ -53,7 +53,7 @@ Because the application is launched normally in the YARN cluster but *from a cli
 ```
 #YARN configuration
 yarn1.site=/opt/envs/prod/etc/hadoop
-yarn1.classpath=/opt/scala/scala-library-2.10.4.jar:/opt/scala/kafka_2.10-0.8.2.1.jar:/usr/lib/hbase/*:/usr/lib/hbase/lib/htrace-core-3.1.0-incubating.jar:/usr/lib/hbase/lib/guava-12.0.1.jar:/usr/lib/hbase/lib/netty-all-4.0.23.Final.jar
+yarn1.classpath=/opt/scala/scala-library-2.11.5.jar:/opt/scala/kafka_2.11-0.8.2.1.jar:/usr/lib/hbase/*:/usr/lib/hbase/lib/htrace-core-3.1.0-incubating.jar:/usr/lib/hbase/lib/guava-12.0.1.jar:/usr/lib/hbase/lib/netty-all-4.0.23.Final.jar
 yarn1.queue=developers
 #YARN-Jprofiler
 #yarn1.env.LD_PRELOAD=/opt/jprofiler/librebind.so

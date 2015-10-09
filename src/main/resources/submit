@@ -1,2 +1,2 @@
 #!/bin/bash
-java -cp "`yarn classpath`:target/${project.name}-${project.version}.jar:/Users/mharis/.m2/repository/org/scala-lang/scala-library/${scala.minor}/scala-library-${scala.minor}.jar" "$@"
+java -cp "`yarn classpath`:target/${project.name}-${project.version}.jar:/Users/mharis/.m2/repository/org/scala-lang/scala-library/${scala.version}/scala-library-${scala.version}.jar" "$@"

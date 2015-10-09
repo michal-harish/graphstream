@@ -9,13 +9,13 @@
     <version>0.9</version>
 
     <properties>
-        <scala.major>2.11</scala.major>
-        <scala.minor>2.11.5</scala.minor>
+        <java.version>1.7</java.version>
+        <scala.version>2.11.5</scala.version>
+        <scala.minor.version>2.11</scala.minor.version>
         <hadoop.version>2.3.0</hadoop.version>
         <cdh.version>cdh5.0.3</cdh.version>
         <kafka.version>0.8.2.1</kafka.version>
         <hbase.version>1.1.0.1</hbase.version>
-        <java.version>1.8</java.version>
         <!--<zookeeper.version>3.4.5</zookeeper.version>-->
     </properties>
 
@@ -28,7 +28,7 @@
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka_${scala.major}</artifactId>
+                    <artifactId>kafka_2.10</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.rabbitmq</groupId>
@@ -94,7 +94,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_${scala.major}</artifactId>
+            <artifactId>kafka_${scala.minor.version}</artifactId>
             <version>${kafka.version}</version>
             <!-- override to provided, in our example yarn1.classpath contains /opt/scala/kafka_2.10-0.8.2.1.jar -->
             <scope>provided</scope>
@@ -116,14 +116,14 @@
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>${scala.minor}</version>
+            <version>${scala.version}</version>
             <!-- override to provided, in our example yarn1.classpath contains  /opt/scala/scala-library-2.10.4.jar -->
             <scope>provided</scope>
         </dependency>
         <!-- test -->
         <dependency>
             <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.major}</artifactId>
+            <artifactId>scalatest_${scala.minor.version}</artifactId>
             <version>2.2.5</version>
             <scope>test</scope>
         </dependency>
@@ -226,11 +226,14 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.scala-tools</groupId>
-                <artifactId>maven-scala-plugin</artifactId>
-                <version>2.15.2</version>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>3.2.1</version>
                 <configuration>
-                    <scalaVersion>${scala.minor}</scalaVersion>
+                    <scalaVersion>${scala.version}</scalaVersion>
+                    <javacArgs>
+                        <javacArg>-target:jvm-${java.version}</javacArg>
+                    </javacArgs>
                     <jvmArgs>
                         <jvmArg>-Xmx4536m</jvmArg>
                     </jvmArgs>
