@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicLong
 import kafka.message.MessageAndOffset
 import net.imagini.dxp.common.BSPMessage
 import org.apache.donut._
-import org.apache.donut.memstore.{MemStoreLogMap, MemStoreMemDb}
+import org.apache.donut.memstore.MemStoreLogMap
 
 /**
  * Created by mharis on 08/10/15.
@@ -16,9 +16,8 @@ class GraphStateBuilder(config: Properties) extends DonutApp[GraphStateBuilderPr
 
   config.setProperty("group.id", "DebugGraphStateBuilder")
   config.setProperty("topics", "graphstate")
-  config.setProperty("direct.memory.mb", "5000")
-  config.setProperty("max.tasks", "8")
-  config.setProperty("task.overhead.memory.mb", "2048") //  +2g heap overhead per task
+  config.setProperty("direct.memory.mb", "100000")
+  config.setProperty("task.overhead.memory.mb", "2048")
   config.setProperty("yarn1.jvm.args", "-XX:+UseSerialGC -XX:NewRatio=3 -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config.setProperty("yarn1.restart.enabled", "false")
   config.setProperty("yarn1.restart.failed.retries", "3")
@@ -32,10 +31,24 @@ class GraphStateBuilderProcessor(config: Properties, logicalPartition: Int, tota
 
   println(s"MAX STATE SIZE IN MB = ${maxStateSizeMb}")
 
-  val altstore = new MemStoreLogMap(maxStateSizeMb, 8, 4 * 65535)
+  val altstore = new MemStoreLogMap(maxStateSizeMb, 64, 4 * 65535)
   val altmap = altstore.map
   var ts = System.currentTimeMillis
   val stateIn = new AtomicLong(0)
+
+  override def executeCommand(cmd: String): Unit = {
+    val c = cmd.split("\\s+").iterator
+    c.next match {
+      case "" => println()
+      case "compact" => altmap.compact
+      case "compress" => altmap.applyCompression(c.next.toDouble)
+      case any => println("Usage:" +
+        "\n\t[ENTER]\t\tprint basic stats" +
+        "\n\tcompact\t\tcompact all segments" +
+        "\n\tcompress <fraction>\t\tcompress any segments in the tail of the log that occupies more than <fraction> of total hash map memory")
+    }
+    altmap.printStats
+  }
 
   override protected def awaitingTermination: Unit = {
     val t = (System.currentTimeMillis - ts)
@@ -43,8 +56,6 @@ class GraphStateBuilderProcessor(config: Properties, logicalPartition: Int, tota
     ts = System.currentTimeMillis
     stateIn.set(0)
     println(s"graphstate (${s} / sec)")
-    altmap.printStats
-    println(s"")
   }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {

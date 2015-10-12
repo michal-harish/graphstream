@@ -13,7 +13,7 @@ import org.apache.donut.KafkaUtils
  */
 
 object ConnectedBSPLocalLauncher extends App {
-  new ConnectedBSPApplication(Config).runLocally(testOnlyOnePartition = true)
+  new ConnectedBSPApplication(Config).runLocally(debugOnePartition = true)
 }
 
 object ConnectedBSPYarnLauncher extends App {
@@ -21,7 +21,7 @@ object ConnectedBSPYarnLauncher extends App {
 }
 
 object SyncsToGraphLocalLauncher extends App {
-  new SyncsToGraphApplication(Config).runLocally(testOnlyOnePartition = true)
+  new SyncsToGraphApplication(Config).runLocally(debugOnePartition = true)
 }
 
 object SyncsToGraphYarnLauncher extends App {
@@ -29,7 +29,7 @@ object SyncsToGraphYarnLauncher extends App {
 }
 
 object GraphToHBaseLocalLauncher extends App {
-  new GraphToHBaseApplication(Config).runLocally(testOnlyOnePartition = true)
+  new GraphToHBaseApplication(Config).runLocally(debugOnePartition = true)
 }
 
 object GraphToHBaseYarnLauncher extends App {
@@ -41,7 +41,7 @@ object GraphToHBaseYarnLauncher extends App {
  */
 
 object DebugGraphState extends App {
-  new GraphStateBuilder(Config).runLocally(testOnlyOnePartition = true)
+  new GraphStateBuilder(Config).runLocally(debugOnePartition = true)
 }
 
 object DebugGraphDelta extends App {
