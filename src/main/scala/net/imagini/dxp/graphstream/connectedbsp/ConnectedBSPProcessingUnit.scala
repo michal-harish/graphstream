@@ -33,7 +33,7 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
     val deltaOutPerSec = (processor.deltaOut.get / period).toLong
     println(s"graphdelta-input(${deltaInPerSec}/sec) invalid:${processor.invalid.get} evicted:${processor.stateEvict.get}" +
       s"missed:${processor.stateMiss.get}) => graphstate-input(${stateInPerSec}/sec) => output(${deltaOutPerSec}/sec)")
-    processor.memstore.printStats
+    processor.memstore.map.printStats(false)
     ts = System.currentTimeMillis
     processor.stateIn.set(0)
     processor.deltaIn.set(0)

@@ -45,7 +45,7 @@ class GraphStateBuilderProcessor(config: Properties, logicalPartition: Int, tota
         "\n\t[ENTER]\t\tprint basic stats" +
         "\n\tcompress <fraction>\t\tcompress any segments in the tail of the log that occupies more than <fraction> of total hash map memory")
     }
-    altmap.printStats
+    altmap.printStats(true)
   }
 
   override protected def awaitingTermination: Unit = {
