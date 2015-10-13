@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import kafka.producer.KeyedMessage
 import net.imagini.dxp.common.{BSPMessage, Edge, Vid}
-import org.apache.donut.memstore.{MemStore, MemStoreMemDb}
+import org.apache.donut.memstore.{MemStoreLogMap, MemStore, MemStoreMemDb}
 
 /**
  * Created by mharis on 26/09/15.
@@ -20,7 +20,8 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
   val MAX_ITERATIONS = 3
   private val MAX_EDGES = 99
 
-  val memstore: MemStore = new MemStoreMemDb(maxStateSizeMb)
+  val memstore // = new MemStoreMemDb(maxStateSizeMb)
+    = new MemStoreLogMap(maxSizeInMb = maxStateSizeMb, segmentSizeMb = 320, compressMinBlockSize = 131070)
 
   val invalid = new AtomicLong(0)
   val stateIn = new AtomicLong(0)

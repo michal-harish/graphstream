@@ -40,7 +40,6 @@ class GraphStateBuilderProcessor(config: Properties, logicalPartition: Int, tota
     val c = cmd.split("\\s+").iterator
     c.next match {
       case "" => println()
-      case "compact" => altmap.compact
       case "compress" => altmap.applyCompression(c.next.toDouble)
       case any => println("Usage:" +
         "\n\t[ENTER]\t\tprint basic stats" +
