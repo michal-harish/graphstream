@@ -13,7 +13,7 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
   extends DonutAppTask(config, logicalPartition, totalLogicalPartitions, topics) {
 
   private val processor = new ConnectedBSPProcessor(
-    maxStateSizeMb = config.getProperty("direct.memory.mb").toInt / totalLogicalPartitions - 256, minEdgeProbability = 0.75)
+    maxStateSizeMb = config.getProperty("direct.memory.mb").toInt / totalLogicalPartitions - 128, minEdgeProbability = 0.75)
 
   private val deltaProducer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 1000)
 

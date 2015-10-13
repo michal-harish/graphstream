@@ -40,10 +40,9 @@ class GraphStateBuilderProcessor(config: Properties, logicalPartition: Int, tota
     val c = cmd.split("\\s+").iterator
     c.next match {
       case "" => println()
-      case "compress" => altmap.applyCompression(c.next.toDouble)
+      //case "compress" => altmap.applyCompression(c.next.toDouble)
       case any => println("Usage:" +
         "\n\t[ENTER]\t\tprint basic stats" +
-        "\n\tcompact\t\tcompact all segments" +
         "\n\tcompress <fraction>\t\tcompress any segments in the tail of the log that occupies more than <fraction> of total hash map memory")
     }
     altmap.printStats
@@ -71,21 +70,10 @@ class GraphStateBuilderProcessor(config: Properties, logicalPartition: Int, tota
   override protected def onShutdown: Unit = {}
 
   def buildState(msgKey: ByteBuffer, payload: ByteBuffer) = {
-    val vid = BSPMessage.decodeKey(msgKey)
-//    BSPMessage.encodeKey(vid) match {
-//      case invalidKey if (!invalidKey.equals(msgKey)) => println(s"Invalid Key ${invalidKey}")
-//      case validKey => BSPMessage.decodePayload(payload) match {
-//        case null => List()
-//        case (i, edges) => {
-//          BSPMessage.encodePayload((i, edges)) match {
-//            case invalidPayload if (!invalidPayload.equals(payload)) => println(s"Invalid Oayload ${invalidPayload}")
-//            case validPayload => {
-//                altstore.put(validKey, validPayload)
-//            }
-//          }
-//        }
-//      }
-//    }
-    altstore.put(msgKey, payload)
+    try {
+      altstore.put(msgKey, payload)
+    } catch {
+      case e: IllegalArgumentException => println(e.getMessage)
+    }
   }
 }

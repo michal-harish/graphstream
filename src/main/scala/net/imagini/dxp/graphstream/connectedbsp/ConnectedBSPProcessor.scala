@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicLong
 import kafka.producer.KeyedMessage
 import net.imagini.dxp.common.{BSPMessage, Edge, Vid}
 import org.apache.donut.memstore.{MemStoreLogMap, MemStore, MemStoreMemDb}
+import org.slf4j.LoggerFactory
 
 /**
  * Created by mharis on 26/09/15.
@@ -17,11 +18,13 @@ import org.apache.donut.memstore.{MemStoreLogMap, MemStore, MemStoreMemDb}
 class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
 
   type MESSAGE = KeyedMessage[ByteBuffer, ByteBuffer]
+
+  private val log = LoggerFactory.getLogger(classOf[ConnectedBSPProcessor])
+
   val MAX_ITERATIONS = 3
   private val MAX_EDGES = 99
 
-  val memstore // = new MemStoreMemDb(maxStateSizeMb)
-    = new MemStoreLogMap(maxSizeInMb = maxStateSizeMb, segmentSizeMb = 320, compressMinBlockSize = 131070)
+  val memstore = new MemStoreLogMap(maxSizeInMb = maxStateSizeMb, segmentSizeMb = 320, compressMinBlockSize = 131070)
 
   val invalid = new AtomicLong(0)
   val stateIn = new AtomicLong(0)
@@ -33,17 +36,20 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
   def bootState(msgKey: ByteBuffer, payload: ByteBuffer): List[MESSAGE]  = {
     val vid = BSPMessage.decodeKey(msgKey)
     BSPMessage.encodeKey(vid) match {
-      case invalidKey if (!invalidKey.equals(msgKey)) => {
+      case reconstructedKey if (!reconstructedKey.equals(msgKey)) => {
         invalid.incrementAndGet
-        List(updateState(msgKey, null))
+        List(
+          new KeyedMessage("graphstate", msgKey, null),
+          new KeyedMessage("graphstate", reconstructedKey, payload)
+        )
       }
       case validKey => BSPMessage.decodePayload(payload) match {
         case null => List()
         case (i, edges) => {
           BSPMessage.encodePayload((i, edges)) match {
-            case invalidPayload if (!invalidPayload.equals(payload)) => {
+            case reconstructedPayload if (!reconstructedPayload.equals(payload)) => {
               invalid.incrementAndGet
-              List(updateState(msgKey, null))
+              List(new KeyedMessage("graphstate", validKey, reconstructedPayload))
             }
             case validPayload => {
               memstore.put(validKey, validPayload)

@@ -23,6 +23,7 @@ class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPP
   config.setProperty("group.id", "GraphStreamingBSP")
   config.setProperty("topics", "graphdelta,graphstate")
   config.setProperty("cogroup", "true")
+  //TODO try config.setProperty("max.tasks", "16") // 32 tasks have 6g  state memory and of that 1.5g is index so this should improve
   config.setProperty("direct.memory.mb",      "200000")  // 200g
   config.setProperty("task.overhead.memory.mb", "2048")  //  +2g heap overhead per task
   config.setProperty("yarn1.jvm.args", "-XX:+UseSerialGC -XX:NewRatio=2 -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
