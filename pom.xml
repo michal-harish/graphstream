@@ -64,11 +64,11 @@
             <scope>provided</scope>
         </dependency>
         <!-- donut-core is included by source and expects hadoop and kafka to be provided so we specify version we run on our cluster -->
-        <dependency>
-            <groupId>org.mapdb</groupId>
-            <artifactId>mapdb</artifactId>
-            <version>2.0-beta7</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.mapdb</groupId>-->
+            <!--<artifactId>mapdb</artifactId>-->
+            <!--<version>2.0-beta7</version>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>net.jpountz.lz4</groupId>
             <artifactId>lz4</artifactId>
