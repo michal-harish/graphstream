@@ -51,17 +51,17 @@ First we need a different kind of topic - a commit log which is supported by Kaf
 Because the application is launched normally in the YARN cluster but *from a client machine*, in the application configuration (typially placed in **/etc/vdna/graphstream/config.properties**) you need `yarn1.site` parameter to point to your local hadoop-yarn configuration files, which in this example are expected to be in **/opt/envs/prod/etc/hadoop**. This configuration can be used on developer macs for launching from IntelliJ (see bleow) or Jenkins or other starting points.
 
 ```
-#YARN configuration
+#YARN 
 yarn1.site=/opt/envs/prod/etc/hadoop
 yarn1.classpath=/opt/scala/scala-library-2.11.5.jar:/opt/scala/kafka_2.11-0.8.2.1.jar:/usr/lib/hbase/*:/usr/lib/hbase/lib/htrace-core-3.1.0-incubating.jar:/usr/lib/hbase/lib/guava-12.0.1.jar:/usr/lib/hbase/lib/netty-all-4.0.23.Final.jar
 yarn1.queue=developers
-#YARN-Jprofiler
+#J-PROFILER
 #yarn1.env.LD_PRELOAD=/opt/jprofiler/librebind.so
 #yarn1.env.REBIND_PORT=8849:0
-#KAFKA configuration
+#KAFKA 
 zookeeper.connect=message-01.prod.visualdna.com,message-02.prod.visualdna.com,message-03.prod.visualdna.com
 kafka.brokers=message-01.prod.visualdna.com:9092,message-02.prod.visualdna.com:9092,message-03.prod.visualdna.com:9092
-#HBASE configuration
+#HBASE
 hbase.site=/etc/hbase/conf.prod
 ```
 

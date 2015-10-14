@@ -31,7 +31,7 @@ class GraphStateBuilderProcessor(config: Properties, logicalPartition: Int, tota
 
   println(s"MAX STATE SIZE IN MB = ${maxStateSizeMb}")
 
-  val altstore = new MemStoreLogMap(maxStateSizeMb, 64, 4 * 65535)
+  val altstore = new MemStoreLogMap(maxStateSizeMb, segmentSizeMb = 64)
   val altmap = altstore.map
   var ts = System.currentTimeMillis
   val stateIn = new AtomicLong(0)

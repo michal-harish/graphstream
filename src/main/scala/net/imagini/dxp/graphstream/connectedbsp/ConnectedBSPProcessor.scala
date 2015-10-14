@@ -24,7 +24,7 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
   val MAX_ITERATIONS = 3
   private val MAX_EDGES = 99
 
-  val memstore = new MemStoreLogMap(maxSizeInMb = maxStateSizeMb, segmentSizeMb = 320, compressMinBlockSize = 131070)
+  val memstore = new MemStoreLogMap(maxSizeInMb = maxStateSizeMb, segmentSizeMb = 320)
 
   val invalid = new AtomicLong(0)
   val stateIn = new AtomicLong(0)
