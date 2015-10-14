@@ -19,13 +19,12 @@ import org.apache.donut.DonutApp
 
 class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPProcessingUnit]({
 
-  // Memory Footprint (32 partitions in both topics) = 200g + (32 x 1g overhead) = 232 Gb
+  // Memory Footprint (32 partitions in both topics) = 200g + (32 x 1g overhead) = 332 Gb
   config.setProperty("group.id", "GraphStreamingBSP")
   config.setProperty("topics", "graphdelta,graphstate")
   config.setProperty("cogroup", "true")
-  //TODO try config.setProperty("max.tasks", "16") // 32 tasks have 6g  state memory and of that 1.5g is index so this should improve
-  config.setProperty("direct.memory.mb",      "200000")  // 200g total direct memory
-  config.setProperty("task.overhead.memory.mb", "1024")  //  +1g heap overhead per task
+  config.setProperty("direct.memory.mb",      "200000")
+  config.setProperty("task.overhead.memory.mb", "1024")
   config.setProperty("yarn1.jvm.args", "-XX:+UseSerialGC -XX:NewRatio=2 -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config.setProperty("yarn1.restart.enabled", "true")
   config.setProperty("yarn1.restart.failed.retries", "3")

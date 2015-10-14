@@ -3,7 +3,9 @@ package net.imagini.dxp.graphstream.connectedbsp
 import java.nio.ByteBuffer
 import kafka.producer.KeyedMessage
 import net.imagini.dxp.common.{Vid, Edge, BSPMessage}
+import org.apache.donut.memstore.MemStoreLogMap
 import org.apache.donut.utils.ByteUtils
+import org.apache.donut.utils.logmap.ConcurrentLogHashMap
 import org.scalatest.{Matchers, FlatSpec}
 
 /**
@@ -13,7 +15,8 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
 
   behavior of "ConnectedBSPProcessor"
 
-  val processor = new ConnectedBSPProcessor(maxStateSizeMb = 1024, minEdgeProbability = 0.39)
+  val processor = new ConnectedBSPProcessor(minEdgeProbability = 0.39,
+    new MemStoreLogMap(new ConcurrentLogHashMap(maxSizeInMb = 1024, segmentSizeMb = 32, 65535)))
 
   def aatEdge(p: Double, ts: Long) = Edge("AAT", p, ts)
 

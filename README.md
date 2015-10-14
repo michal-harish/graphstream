@@ -107,10 +107,15 @@ log.cleaner.enable=true
 ./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 2 --config cleanup.policy=delete --config retention.bytes=2147483648 
 ```
 
-### Creating a compacted topic
+### Creating a compacted topic with some special behaviours
 And then creating topic with compact cleanup policy
 ```bash
-./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphstate --partitions 32 --replication-factor 1 --config cleanup.policy=compact --config retention.bytes=4294967296 
+./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphstate --partitions 32 --replication-factor 1 --config cleanup.policy=compact --config min.cleanable.dirty.ratio=0.2 
+```
+
+Altering the topic to practically ignore the tombstone retention ..10 minutes from default 24 hours
+```
+./bin/kafka-topics.sh --zookeeper <zkconnect> --alter --topic graphstate --config delete.retention.ms=0
 ```
 
 ### Deleting topics
@@ -182,8 +187,11 @@ The reason for the test package is that many dependencies are provided and not a
 2. LocalLaunch - is for debugging and doesn't actually submit the application to yarn and all streaming and processing happens locally
 
 ### TODOs  
-- Evicted keys should be also recorded in graphdelta topic so that hbase loader can pick it up and remove the row
 - Edges should not be represented as Map[Vid, EdgeProps] but rather Set[Edge] where Edge object would contain the dest Vid to allow for duplicate connections with different properties 
 - SyncsToGraph could have a for short window memstore for better detection of bad data, robots, etc.  
 
+
+DONE
+Evicted keys should be also recorded in graphdelta topic so that hbase loader can pick it up and remove the row
+Evicted keys are picked up and for each a tombstone is emitted to the graphstate topic
 

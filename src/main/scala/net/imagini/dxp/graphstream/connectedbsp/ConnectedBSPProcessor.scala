@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import kafka.producer.KeyedMessage
 import net.imagini.dxp.common.{BSPMessage, Edge, Vid}
-import org.apache.donut.memstore.MemStoreLogMap
+import org.apache.donut.memstore.MemStore
 import org.slf4j.LoggerFactory
 
 /**
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
  * isolated from the consumer and producer streams by returning set of messages that are testable without any
  * connections or bootstrap state.
  */
-class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
+class ConnectedBSPProcessor(minEdgeProbability: Double, val memstore: MemStore) {
 
   type MESSAGE = KeyedMessage[ByteBuffer, ByteBuffer]
 
@@ -23,8 +23,6 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
 
   val MAX_ITERATIONS = 3
   private val MAX_EDGES = 99
-
-  val memstore = new MemStoreLogMap(maxSizeInMb = maxStateSizeMb, segmentSizeMb = 320)
 
   val invalid = new AtomicLong(0)
   val stateIn = new AtomicLong(0)
@@ -40,7 +38,7 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
         invalid.incrementAndGet
         List(
           new KeyedMessage("graphstate", msgKey, null),
-          new KeyedMessage("graphstate", reconstructedKey, payload)
+          new KeyedMessage("graphdelta", reconstructedKey, payload)
         )
       }
       case validKey => BSPMessage.decodePayload(payload) match {
@@ -68,6 +66,10 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
    * @return list of messages to produce
    */
   def processDeltaInput(key: ByteBuffer, payload: ByteBuffer): List[MESSAGE] = {
+    if (payload == null) {
+      //eviction message was generated here, no need to process more
+      return List()
+    }
     deltaIn.incrementAndGet
     val output = List.newBuilder[MESSAGE]
     memstore.get(key, b => b) match {
@@ -97,6 +99,7 @@ class ConnectedBSPProcessor(maxStateSizeMb: Int, minEdgeProbability: Double) {
           val evictDest = BSPMessage.decodeKey(key)
           val evictEdge = Edge(Edge.VENDOR_CODE_UNKNOWN, 0.0, System.currentTimeMillis)
           output ++= propagateEdges(iteration, Map(evictDest -> evictEdge), existingEdges)
+          output += new KeyedMessage("graphdelta", key, null.asInstanceOf[ByteBuffer])
           output += updateState(key, null.asInstanceOf[ByteBuffer])
         } else if (additionalEdges.size > 0 || evictedEdges.size > 0) {
           if (iteration < MAX_ITERATIONS && additionalEdges.size > 0) {

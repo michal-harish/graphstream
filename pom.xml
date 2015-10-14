@@ -73,6 +73,11 @@
             <artifactId>nanohttpd</artifactId>
             <version>2.1.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.nanohttpd</groupId>
+            <artifactId>nanohttpd-webserver</artifactId>
+            <version>2.1.1</version>
+        </dependency>
         <!--<dependency>-->
         <!--<groupId>org.mapdb</groupId>-->
         <!--<artifactId>mapdb</artifactId>-->
@@ -189,7 +194,6 @@
                             <sources>
                                 <source>donut/yarn1/src/main/java</source>
                                 <source>donut/core/src/main/scala</source>
-                                <source>donut/web-ui/src/main/scala</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -203,7 +207,6 @@
                             <sources>
                                 <source>donut/yarn1/src/test/java</source>
                                 <source>donut/core/src/test/scala</source>
-                                <source>donut/web-ui/src/test/scala</source>
                             </sources>
                         </configuration>
                     </execution>
