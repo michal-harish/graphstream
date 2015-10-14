@@ -191,7 +191,4 @@ The reason for the test package is that many dependencies are provided and not a
 - SyncsToGraph could have a for short window memstore for better detection of bad data, robots, etc.  
 
 
-DONE
-Evicted keys should be also recorded in graphdelta topic so that hbase loader can pick it up and remove the row
-Evicted keys are picked up and for each a tombstone is emitted to the graphstate topic
 
