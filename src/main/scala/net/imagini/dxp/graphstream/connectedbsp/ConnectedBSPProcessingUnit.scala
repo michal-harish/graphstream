@@ -2,6 +2,7 @@ package net.imagini.dxp.graphstream.connectedbsp
 
 import java.nio.ByteBuffer
 import java.util.Properties
+import java.util.concurrent.atomic.AtomicLong
 
 import kafka.message.MessageAndOffset
 import kafka.producer.KeyedMessage
@@ -18,6 +19,8 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
 
   type MESSAGE = KeyedMessage[ByteBuffer, ByteBuffer]
 
+  val evictions = new AtomicLong(0)
+
   private val logmap = new ConcurrentLogHashMap(
     maxSizeInMb = config.getProperty("direct.memory.mb").toInt / totalLogicalPartitions - 128,
     segmentSizeMb = 100,
@@ -27,6 +30,7 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
       /**
        * When the in-memory state overflows we also create a tombstone in the compacted state topic
        */
+      evictions.incrementAndGet
       produce(List(
         new KeyedMessage("graphstate", key, null.asInstanceOf[ByteBuffer]),
         new KeyedMessage("graphdelta", key, null.asInstanceOf[ByteBuffer])
@@ -49,19 +53,18 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
 
   override def awaitingTermination {
     val period = (System.currentTimeMillis.toDouble - ts) / 1000
-    val stateInPerSec = (processor.stateIn.get / period).toLong
-    val deltaInPerSec = (processor.deltaIn.get / period).toLong
-    val deltaOutPerSec = (processor.deltaOut.get / period).toLong
-    println(s"graphdelta-input(${deltaInPerSec}/sec) invalid:${processor.invalid.get} evicted:${processor.stateEvict.get}" +
-      s"missed:${processor.stateMiss.get}) => graphstate-input(${stateInPerSec}/sec) => output(${deltaOutPerSec}/sec)")
-    processor.memstore.printStats(false)
     ts = System.currentTimeMillis
-    processor.stateIn.set(0)
-    processor.deltaIn.set(0)
-    processor.stateEvict.set(0)
-    processor.stateMiss.set(0)
-    processor.deltaOut.set(0)
-
+    val stateInPerSec = (processor.stateIn.getAndSet(0) / period).toLong
+    val deltaInPerSec = (processor.deltaIn.getAndSet(0) / period).toLong
+    val deltaOutPerSec = (processor.deltaOut.getAndSet(0) / period).toLong
+    val evictsPerSec = (evictions.getAndSet(0) / period).toLong
+    println(s"graphdelta-input(${deltaInPerSec}/sec) " +
+      s"invalid:${processor.invalid.get} " +
+      s"exceeded:${processor.excess.get} " +
+      s"missed:${processor.stateMiss.get} " +
+      s"=> graphstate-input(${stateInPerSec}/sec) => output(${deltaOutPerSec}/sec) " +
+      s"=> graphstate-evicts: ${evictsPerSec}/sec")
+    processor.memstore.printStats(false)
   }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {

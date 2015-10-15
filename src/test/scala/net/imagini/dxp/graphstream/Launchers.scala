@@ -1,7 +1,7 @@
 package net.imagini.dxp.graphstream
 
 import net.imagini.dxp.graphstream.connectedbsp.{ConnectedBSP, ConnectedBSPApplication}
-import net.imagini.dxp.graphstream.debugging.{GraphStateCompactor, GraphDeltaPrinter, GraphStatePrinter}
+import net.imagini.dxp.graphstream.debugging.{GraphStateCompactorApp, GraphStateCompactor, GraphStatePrinter}
 import net.imagini.dxp.graphstream.ingest.{SyncsToGraph, SyncsToGraphApplication}
 import net.imagini.dxp.graphstream.output.{GraphToHBase, GraphToHBaseApplication}
 import org.apache.donut.KafkaUtils
@@ -41,11 +41,11 @@ object GraphToHBaseYarnLauncher extends App {
  */
 
 object GraphStateDebugLocal extends App {
-  new GraphStateCompactor(Config).runLocally(debugOnePartition = 5)
+  new GraphStateCompactorApp(Config).runLocally(debugOnePartition = 5)
 }
 
 object GraphStateCompactYarn extends App {
-  new GraphStateCompactor(Config).runOnYarn(true)
+  GraphStateCompactor.main(Array(Config.path, "wait"))
 }
 
 

@@ -27,7 +27,7 @@ class ConnectedBSPProcessor(minEdgeProbability: Double, val memstore: MemStore) 
   val invalid = new AtomicLong(0)
   val stateIn = new AtomicLong(0)
   val deltaIn = new AtomicLong(0)
-  val stateEvict = new AtomicLong(0)
+  val excess = new AtomicLong(0)
   val stateMiss = new AtomicLong(0)
   val deltaOut = new AtomicLong(0)
 
@@ -77,7 +77,7 @@ class ConnectedBSPProcessor(minEdgeProbability: Double, val memstore: MemStore) 
         stateMiss.incrementAndGet
         output += updateState(key, payload)
       }
-      case Some(null) => stateEvict.incrementAndGet
+      case Some(null) => excess.incrementAndGet
 
       case Some(previousState) => {
         val (iteration, inputEdges) = BSPMessage.decodePayload(payload)

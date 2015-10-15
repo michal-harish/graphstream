@@ -84,13 +84,13 @@ class GraphToHBaseProcessingUnit(config: Properties, logicalPartition: Int, tota
               loaderThread.start
             }
             if (payload == null) {
-              compactedQueue.put(key, null)
+              compactedQueue.put(key, Map[Vid, Edge]())
             } else {
               val addedEdges = BSPMessage.decodePayload(payload)._2
               if (!compactedQueue.containsKey(key)) {
                 compactedQueue.put(key, addedEdges)
               } else compactedQueue.get(key) match {
-                case null => {}
+                case previousEdges if (previousEdges.size == 0) => compactedQueue.put(key, addedEdges)
                 case previousEdges => {
                   compactedQueue.put(key, previousEdges ++ addedEdges)
                 }
@@ -129,25 +129,23 @@ class GraphToHBaseProcessingUnit(config: Properties, logicalPartition: Int, tota
                   val edges = entry.getValue
                   var put: Put = null
                   var delete: Delete = null
-                  if (edges == null) {
+                  if (edges.size == 0) {
                     delete = new Delete(key.bytes)
                     delete.addFamily(Bytes.toBytes("N"))
                   } else {
-                    if (edges.size > 0) {
-                      edges.foreach { case (destVid, destEdge) => {
-                        if (destEdge.probability == 0) {
-                          if (delete == null) {
-                            delete = new Delete(key.bytes)
-                          }
-                          delete.addColumn(Bytes.toBytes("N"), destVid.bytes)
-                        } else {
-                          if (put == null) {
-                            put = new Put(key.bytes)
-                          }
-                          put.addColumn(Bytes.toBytes("N"), destVid.bytes, destEdge.ts, destEdge.bytes)
+                    edges.foreach { case (destVid, destEdge) => {
+                      if (destEdge.probability == 0) {
+                        if (delete == null) {
+                          delete = new Delete(key.bytes)
                         }
+                        delete.addColumn(Bytes.toBytes("N"), destVid.bytes)
+                      } else {
+                        if (put == null) {
+                          put = new Put(key.bytes)
+                        }
+                        put.addColumn(Bytes.toBytes("N"), destVid.bytes, destEdge.ts, destEdge.bytes)
                       }
-                      }
+                    }
                     }
                   }
                   if (delete != null && !delete.isEmpty) {
