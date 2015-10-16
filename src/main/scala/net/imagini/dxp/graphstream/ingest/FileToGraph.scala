@@ -103,9 +103,6 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
 
     var numHardErrors = 0
     while (true) try {
-      if (producer == null) {
-        producer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 2000, queueSize = 100000)
-      }
       produce(new KeyedMessage(
         "graphdelta",
         BSPMessage.encodeKey(pair._1),
@@ -135,7 +132,7 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
     var numSoftErrors = 0
     while (true) try {
       if (producer == null) {
-        producer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](numAcks = 1, batchSize = 500)
+        producer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](async = false, numAcks = 1, batchSize = 500)
       }
       producer.send(message)
       return

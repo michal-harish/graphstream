@@ -9,6 +9,7 @@ import kafka.producer.KeyedMessage
 import net.imagini.dxp.common.VidKafkaPartitioner
 import org.apache.donut._
 import org.apache.donut.memstore.MemStoreLogMap
+import org.apache.donut.metrics.{Info, Throughput, Counter}
 import org.apache.donut.utils.logmap.ConcurrentLogHashMap
 
 /**
@@ -26,14 +27,23 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
     segmentSizeMb = 100,
     compressMinBlockSize = 131070,
     indexLoadFactor = 0.87) {
+    /**
+     * When the in-memory state overflows we also create a tombstone in the compacted state topic
+     */
     override def onEvictEntry(key: ByteBuffer): Unit = {
-      if (key == null) {
-        throw new IllegalArgumentException("Key cannot be null")
+      if (key == null || key.remaining <= 0) {
+        throw new IllegalArgumentException("Key cannot be null or empty")
       }
-      /**
-       * When the in-memory state overflows we also create a tombstone in the compacted state topic
-       */
       evictions.incrementAndGet
+      //TODO test what is better in this situation: either sync producer with full zero-copy async producers
+      //key is a sliced bytebuffer which may be re-used so we need to make a copy for the kafka async producer
+      /*
+      val keyCopy = ByteBuffer.wrap(ByteUtils.bufToArray(key))
+      produce(List(
+        new KeyedMessage("graphstate", keyCopy, null.asInstanceOf[ByteBuffer]),
+        new KeyedMessage("graphdelta", keyCopy, null.asInstanceOf[ByteBuffer])
+      ))
+      */
       produce(List(
         new KeyedMessage("graphstate", key, null.asInstanceOf[ByteBuffer]),
         new KeyedMessage("graphdelta", key, null.asInstanceOf[ByteBuffer])
@@ -43,9 +53,9 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
 
   private val processor = new ConnectedBSPProcessor(minEdgeProbability = 0.75, new MemStoreLogMap(logmap))
 
-  private val deltaProducer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 1000)
+  private val deltaProducer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](async = false, numAcks = 0, batchSize = 1000)
 
-  private val stateProducer = kafkaUtils.createCompactProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 200)
+  private val stateProducer = kafkaUtils.createCompactProducer[VidKafkaPartitioner]( async = false, numAcks = 0, batchSize = 200)
 
   override def onShutdown: Unit = {
     deltaProducer.close
@@ -53,21 +63,20 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
   }
 
   @volatile var ts = System.currentTimeMillis
-
   override def awaitingTermination {
-    val period = (System.currentTimeMillis.toDouble - ts) / 1000
+    val period = (System.currentTimeMillis - ts)
     ts = System.currentTimeMillis
-    val stateInPerSec = (processor.stateIn.getAndSet(0) / period).toLong
-    val deltaInPerSec = (processor.deltaIn.getAndSet(0) / period).toLong
-    val deltaOutPerSec = (processor.deltaOut.getAndSet(0) / period).toLong
-    val evictsPerSec = (evictions.getAndSet(0) / period).toLong
-    println(s"graphdelta-input(${deltaInPerSec}/sec) " +
-      s"invalid:${processor.invalid.get} " +
-      s"exceeded:${processor.excess.get} " +
-      s"missed:${processor.stateMiss.get} " +
-      s"=> graphstate-input(${stateInPerSec}/sec) => output(${deltaOutPerSec}/sec) " +
-      s"=> graphstate-evicts: ${evictsPerSec}/sec")
-    processor.memstore.printStats(false)
+    sendMetric("gs:in/sec", classOf[Throughput], processor.stateIn.getAndSet(0) * 1000 / period)
+    sendMetric("gs:evict/sec", classOf[Throughput], evictions.getAndSet(0) * 1000 / period)
+    sendMetric("gs:invalid", classOf[Counter], processor.invalid.get)
+    sendMetric("s:size", classOf[Counter], processor.memstore.size)
+    sendMetric("s:memory.mb", classOf[Counter], processor.memstore.sizeInBytes / 1024 / 1024)
+    sendMetric("s:extra", classOf[Info], s"<a title='${processor.memstore.stats(true).mkString("\n")}'>info</a>")
+    sendMetric("d:msg/sec", classOf[Throughput], processor.deltaIn.getAndSet(0) * 1000 / period)
+    sendMetric("d:msg/sec", classOf[Throughput], processor.deltaIn.getAndSet(0) * 1000 / period)
+    sendMetric("d:miss", classOf[Counter], processor.miss.get)
+    sendMetric("d:excess", classOf[Counter], processor.excess.get)
+    sendMetric("o:msg/sec", classOf[Throughput], processor.deltaOut.getAndSet(0) * 1000 / period)
   }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {

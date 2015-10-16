@@ -13,7 +13,7 @@ import org.apache.donut.KafkaUtils
  */
 
 object ConnectedBSPLocalLauncher extends App {
-  new ConnectedBSPApplication(Config).runLocally(debugOnePartition = 0)
+  new ConnectedBSPApplication(Config).runLocally(debugOnePartition = 6)
 }
 
 object ConnectedBSPYarnLauncher extends App {

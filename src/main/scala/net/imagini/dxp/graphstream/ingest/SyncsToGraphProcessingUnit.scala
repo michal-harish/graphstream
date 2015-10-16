@@ -1,6 +1,5 @@
 package net.imagini.dxp.graphstream.ingest
 
-import java.nio.ByteBuffer
 import java.util
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
@@ -10,7 +9,8 @@ import kafka.producer.KeyedMessage
 import net.imagini.common.message.VDNAUserImport
 import net.imagini.common.messaging.serde.VDNAUniversalDeserializer
 import net.imagini.dxp.common._
-import org.apache.donut.{FetcherDelta, Fetcher, DonutAppTask}
+import org.apache.donut.metrics.{Counter, Throughput}
+import org.apache.donut.{DonutAppTask, Fetcher, FetcherDelta}
 
 /**
  * Created by mharis on 15/09/15.
@@ -20,21 +20,29 @@ class SyncsToGraphProcessingUnit(config: Properties, logicalPartition: Int, tota
 
   val vdnaMessageDecoder = new VDNAUniversalDeserializer
   val counterReceived = new AtomicLong(0)
-  val counterInvalid = new AtomicLong(0)
+  val counterErrors = new AtomicLong(0)
   val counterFiltered = new AtomicLong(0)
   val counterValid = new AtomicLong(0)
   val counterProduced = new AtomicLong(0)
   val idSpaceSet = Set("a", "r", "d")
   val blacklists = new BlackLists
 
-  val snappyProducer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 500)
+  val snappyProducer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](async = false, numAcks = 0, batchSize = 500)
 
   override def onShutdown: Unit = {
     snappyProducer.close
   }
 
+  @volatile private var ts = System.currentTimeMillis
+
   override def awaitingTermination: Unit = {
-    println(s"datasync-VDNAUserImport[${counterReceived.get}] => filter[${counterFiltered.get}] => passed[${counterValid.get}] => graphstream[${counterProduced.get}] [invalid ${counterInvalid.get}]")
+    val period = (System.currentTimeMillis - ts)
+    ts = System.currentTimeMillis
+    sendMetric("in:VDNAUserImport/sec", classOf[Throughput], counterReceived.getAndSet(0) * 1000 / period)
+    sendMetric("in:filter/sec", classOf[Throughput], counterFiltered.getAndSet(0)* 1000 / period)
+    sendMetric("in:valid/sec", classOf[Throughput], counterValid.getAndSet(0) * 1000 / period)
+    sendMetric("out:errors", classOf[Counter], counterErrors.get)
+    sendMetric("out:graphstream/sec", classOf[Throughput], counterProduced.getAndSet(0) * 1000 / period)
   }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {
@@ -87,7 +95,7 @@ class SyncsToGraphProcessingUnit(config: Properties, logicalPartition: Int, tota
       )
       counterProduced.addAndGet(2L)
     } catch {
-      case e: IllegalArgumentException => counterInvalid.incrementAndGet
+      case e: IllegalArgumentException => counterErrors.incrementAndGet
     }
   }
 

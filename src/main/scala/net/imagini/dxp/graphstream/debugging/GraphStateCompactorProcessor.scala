@@ -8,6 +8,7 @@ import kafka.message.MessageAndOffset
 import kafka.producer.KeyedMessage
 import net.imagini.dxp.common.VidKafkaPartitioner
 import org.apache.donut.memstore.MemStoreLogMap
+import org.apache.donut.metrics.Throughput
 import org.apache.donut.utils.logmap.ConcurrentLogHashMap
 import org.apache.donut.{DonutAppTask, Fetcher, FetcherBootstrap}
 
@@ -40,12 +41,11 @@ class GraphStateCompactorProcessor(config: Properties, logicalPartition: Int, to
   val altstore = new MemStoreLogMap(logmap)
 
   val altmap = altstore.map
-  var ts = System.currentTimeMillis
   val stateIn = new AtomicLong(0)
   val evicted = new AtomicLong(0)
   val invalid = new AtomicLong(0)
 
-  private val stateProducer = kafkaUtils.createCompactProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 200)
+  private val stateProducer = kafkaUtils.createCompactProducer[VidKafkaPartitioner](async = false, numAcks = 0)
 
   override def executeCommand(cmd: String): Unit = {
     val c = cmd.split("\\s+").iterator
@@ -60,17 +60,17 @@ class GraphStateCompactorProcessor(config: Properties, logicalPartition: Int, to
         "\n\tui\t\tget web ui url" +
         "\n\tcompress <fraction>\t\tcompress any segments in the tail of the log that occupies more than <fraction> of total hash map memory")
     }
-    altmap.printStats(true)
+    altmap.stats(details = true).foreach(println)
   }
 
+  @volatile private var ts = System.currentTimeMillis
   override protected def awaitingTermination: Unit = {
     val t = (System.currentTimeMillis - ts)
     ts = System.currentTimeMillis
-    val s = stateIn.getAndSet(0) * 1000 / t
-    val e = evicted.getAndSet(0) * 1000 / t
-    val i = invalid.getAndSet(0) * 1000 / t
-    println(s"graphstate ${s}/sec,  evicted = ${e}/sec, invalid = ${i}/sec")
-    logmap.printStats(false)
+    sendMetric("graphstate:msg/sec", classOf[Throughput], stateIn.getAndSet(0) * 1000 / t)
+    sendMetric("evicted/sec", classOf[Throughput], evicted.getAndSet(0) * 1000 / t)
+    sendMetric("invalid/sec", classOf[Throughput], invalid.getAndSet(0) * 1000 / t)
+    logmap.stats(details = true).foreach(println)
   }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {

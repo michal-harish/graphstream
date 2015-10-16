@@ -7,6 +7,7 @@ import java.util.concurrent.{Semaphore, ConcurrentHashMap}
 
 import kafka.message.MessageAndOffset
 import net.imagini.dxp.common.{BSPMessage, Edge, Vid}
+import org.apache.donut.metrics.Throughput
 import org.apache.donut.{DonutAppTask, Fetcher, FetcherDelta}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
@@ -58,8 +59,14 @@ class GraphToHBaseProcessingUnit(config: Properties, logicalPartition: Int, tota
 
   private val tableNameAsString = config.getProperty("hbase.table")
 
-  override protected def awaitingTermination: Unit = {
-    println(s"graphdelta(${deltaCounter.get}) => MUTATIONS IN TABLE `${tableNameAsString}`: PUT = ${putCounter.get}, DELETE = ${deleteCounter.get}")
+  @volatile private var ts = System.currentTimeMillis
+
+  override def awaitingTermination: Unit = {
+    val period = (System.currentTimeMillis - ts)
+    ts = System.currentTimeMillis
+    sendMetric("in:graphdelta/sec", classOf[Throughput], deltaCounter.getAndSet(0) * 1000 / period)
+    sendMetric(s"${tableNameAsString}:put/sec", classOf[Throughput], putCounter.getAndSet(0) * 1000 / period)
+    sendMetric(s"${tableNameAsString}:del/sec", classOf[Throughput], deleteCounter.getAndSet(0) * 1000 / period)
   }
 
   override protected def onShutdown: Unit = {

@@ -28,7 +28,7 @@ class ConnectedBSPProcessor(minEdgeProbability: Double, val memstore: MemStore) 
   val stateIn = new AtomicLong(0)
   val deltaIn = new AtomicLong(0)
   val excess = new AtomicLong(0)
-  val stateMiss = new AtomicLong(0)
+  val miss = new AtomicLong(0)
   val deltaOut = new AtomicLong(0)
 
   def bootState(msgKey: ByteBuffer, payload: ByteBuffer): List[MESSAGE]  = {
@@ -74,7 +74,7 @@ class ConnectedBSPProcessor(minEdgeProbability: Double, val memstore: MemStore) 
     val output = List.newBuilder[MESSAGE]
     memstore.get(key, b => b) match {
       case None => {
-        stateMiss.incrementAndGet
+        miss.incrementAndGet
         output += updateState(key, payload)
       }
       case Some(null) => excess.incrementAndGet
