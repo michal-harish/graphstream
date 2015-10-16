@@ -18,6 +18,8 @@ package net.imagini.dxp.common
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+import java.nio.ByteBuffer
+
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
@@ -29,9 +31,17 @@ class VidKafkaPartitionerTest extends FlatSpec with Matchers {
   val numPartitions = 5
 
   p1.partition(Array(0.toByte,0.toByte,0.toByte,0.toByte), numPartitions) should be(0)
+  p1.partition(ByteBuffer.wrap(Array(0.toByte,0.toByte,0.toByte,0.toByte)), numPartitions) should be(0)
+  p1.partition(Array(0.toByte,0.toByte,255.toByte,255.toByte), numPartitions) should be(0)
+  p1.partition(ByteBuffer.wrap(Array(0.toByte,0.toByte,255.toByte,255.toByte)), numPartitions) should be(0)
   p1.partition(Array(51.toByte,51.toByte,51.toByte,51.toByte), numPartitions) should be(1)
+  p1.partition(Array(102.toByte,102.toByte,0.toByte,0.toByte), numPartitions) should be(1)
+  p1.partition(ByteBuffer.wrap(Array(102.toByte,102.toByte,0.toByte,0.toByte)), numPartitions) should be(1)
   p1.partition(Array(102.toByte,102.toByte,102.toByte,102.toByte), numPartitions) should be(2)
   p1.partition(Array(153.toByte,153.toByte,153.toByte,153.toByte), numPartitions) should be(3)
+  p1.partition(ByteBuffer.wrap(Array(153.toByte,153.toByte,153.toByte,153.toByte)), numPartitions) should be(3)
   p1.partition(Array(204.toByte,204.toByte,204.toByte,204.toByte), numPartitions) should be(4)
   p1.partition(Array(255.toByte,255.toByte,255.toByte,255.toByte), numPartitions) should be(4)
+  p1.partition(ByteBuffer.wrap(Array(255.toByte,255.toByte,255.toByte,255.toByte)), numPartitions) should be(4)
+
 }

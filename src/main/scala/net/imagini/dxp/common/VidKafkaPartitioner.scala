@@ -37,7 +37,7 @@ class VidKafkaPartitioner extends Partitioner {
 
   override def partition(key: Any, numPartitions: Int): Int = {
     key match {
-      case a: Array[Byte] if a.length > 0 => Vid.getPartition(numPartitions, a)
+      case a: Array[Byte] if (a.length > 0) => Vid.getPartition(numPartitions, a)
       case b: ByteBuffer => Vid.getPartition(numPartitions, b)
       case v: Vid => Vid.getPartition(numPartitions, v)
       case x: Any => throw new IllegalArgumentException

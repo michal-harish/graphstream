@@ -63,19 +63,29 @@ object Vid {
 
   private val maxHash = BigInt(1, Array(255.toByte,255.toByte,255.toByte,255.toByte))
 
-  def getPartition(numPartitions: Int, vid: ByteBuffer):Int = getPartition(numPartitions, vid.array, vid.arrayOffset)
-
   def getPartition(numPartitions: Int, vid: Vid):Int = getPartition(numPartitions, vid.bytes, 0)
 
   def getPartition(numPartitions: Int, vidArray: Array[Byte]):Int = getPartition(numPartitions, vidArray, 0)
 
   def getPartition(numPartitions: Int, vidArray: Array[Byte], vidArrayOffset: Int): Int = {
+    getPartition(numPartitions, BigInt(1, vidArray.slice(vidArrayOffset, vidArrayOffset + 4)))
+  }
+
+  def getPartition(numPartitions: Int, b: ByteBuffer):Int = {
+    val hashCode:BigInt = (b.get(b.position + 3) & 0xFF) +
+      ((b.get(b.position + 2) & 0xFF) << 8) +
+      ((b.get(b.position + 1) & 0xFF) << 16) + (BigInt(b.get(b.position) & 0xFF) << 24)
+    getPartition(numPartitions, hashCode)
+  }
+
+  def getPartition(numPartitions: Int, hashCode: BigInt): Int = {
     val unit = maxHash / (numPartitions)
-    val p = (BigInt(1, vidArray.slice(vidArrayOffset, vidArrayOffset + 4)) / unit).toInt
+    val p = (hashCode / unit).toInt
     math.min(p, numPartitions-1)
   }
 
 }
+
 
 
 
