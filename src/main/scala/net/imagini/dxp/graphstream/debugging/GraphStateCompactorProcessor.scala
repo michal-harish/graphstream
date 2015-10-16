@@ -79,6 +79,7 @@ class GraphStateCompactorProcessor(config: Properties, logicalPartition: Int, to
         def handleMessage(messageAndOffset: MessageAndOffset): Unit = {
           stateIn.incrementAndGet
           buildState(messageAndOffset.message.key, messageAndOffset.message.payload)
+          Thread.sleep(100)
         }
       }
     }

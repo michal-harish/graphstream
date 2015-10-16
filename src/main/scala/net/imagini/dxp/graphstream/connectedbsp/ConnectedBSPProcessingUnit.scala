@@ -27,6 +27,9 @@ class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, tota
     compressMinBlockSize = 131070,
     indexLoadFactor = 0.87) {
     override def onEvictEntry(key: ByteBuffer): Unit = {
+      if (key == null) {
+        throw new IllegalArgumentException("Key cannot be null")
+      }
       /**
        * When the in-memory state overflows we also create a tombstone in the compacted state topic
        */

@@ -40,11 +40,11 @@ object GraphToHBaseYarnLauncher extends App {
  * Debugger launchers
  */
 
-object GraphStateDebugLocal extends App {
+object DebugGraphStateLocal extends App {
   new GraphStateCompactorApp(Config).runLocally(debugOnePartition = 5)
 }
 
-object GraphStateCompactYarn extends App {
+object DebugGraphStateYarn extends App {
   GraphStateCompactor.main(Array(Config.path, "wait"))
 }
 

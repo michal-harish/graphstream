@@ -297,7 +297,7 @@
                 <executions>
                     <execution>
                         <id>extract</id>
-                        <phase>compile</phase>
+                        <phase>generate-resources</phase>
                         <goals>
                             <goal>unpack-dependencies</goal>
                         </goals>
