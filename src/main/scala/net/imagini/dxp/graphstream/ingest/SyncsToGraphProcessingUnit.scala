@@ -1,5 +1,6 @@
 package net.imagini.dxp.graphstream.ingest
 
+import java.net.URL
 import java.util
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
@@ -15,8 +16,9 @@ import org.apache.donut.{DonutAppTask, Fetcher, FetcherDelta}
 /**
  * Created by mharis on 15/09/15.
  */
-class SyncsToGraphProcessingUnit(config: Properties, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
-  extends DonutAppTask(config, logicalPartition, totalLogicalPartitions, topics) {
+class SyncsToGraphProcessingUnit(
+  config: Properties, trackingUrl: URL, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
+  extends DonutAppTask(config, trackingUrl, logicalPartition, totalLogicalPartitions, topics) {
 
   val vdnaMessageDecoder = new VDNAUniversalDeserializer
   val counterReceived = new AtomicLong(0)

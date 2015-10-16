@@ -1,5 +1,6 @@
 package net.imagini.dxp.graphstream.debugging
 
+import java.net.URL
 import java.nio.ByteBuffer
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
@@ -15,8 +16,9 @@ import org.apache.donut.{DonutAppTask, Fetcher, FetcherBootstrap}
 /**
  * Created by mharis on 14/10/15.
  */
-class GraphStateCompactorProcessor(config: Properties, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
-  extends DonutAppTask(config, logicalPartition, totalLogicalPartitions, topics) {
+class GraphStateCompactorProcessor(
+  config: Properties, trackingUrl: URL, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
+  extends DonutAppTask(config, trackingUrl, logicalPartition, totalLogicalPartitions, topics) {
 
   val maxStateSizeMb = config.getProperty("direct.memory.mb").toInt / totalLogicalPartitions
 

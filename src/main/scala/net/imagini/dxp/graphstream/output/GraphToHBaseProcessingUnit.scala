@@ -1,6 +1,7 @@
 package net.imagini.dxp.graphstream.output
 
 import java.io.IOException
+import java.net.URL
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.{Semaphore, ConcurrentHashMap}
@@ -23,8 +24,8 @@ import org.slf4j.LoggerFactory
  * to the number of fetchers which all can proceed until the compaction thread kicks in and acquires the total number
  * and turns 'red'.
  */
-class GraphToHBaseProcessingUnit(config: Properties, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
-  extends DonutAppTask(config, logicalPartition, totalLogicalPartitions, topics) {
+class GraphToHBaseProcessingUnit(config: Properties, trackingUrl: URL, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
+  extends DonutAppTask(config, trackingUrl, logicalPartition, totalLogicalPartitions, topics) {
 
   private val log = LoggerFactory.getLogger(classOf[GraphToHBaseProcessingUnit])
 

@@ -41,7 +41,7 @@ object GraphToHBaseYarnLauncher extends App {
  */
 
 object DebugGraphStateLocal extends App {
-  new GraphStateCompactorApp(Config).runLocally(debugOnePartition = 5)
+  new GraphStateCompactorApp(Config).runLocally() //debugOnePartition = 5
 }
 
 object DebugGraphStateYarn extends App {

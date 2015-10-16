@@ -1,5 +1,6 @@
 package net.imagini.dxp.graphstream.connectedbsp
 
+import java.net.URL
 import java.nio.ByteBuffer
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
@@ -15,8 +16,9 @@ import org.apache.donut.utils.logmap.ConcurrentLogHashMap
 /**
  * Created by mharis on 14/09/15.
  */
-class ConnectedBSPProcessingUnit(config: Properties, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
-  extends DonutAppTask(config, logicalPartition, totalLogicalPartitions, topics) {
+class ConnectedBSPProcessingUnit(
+  config: Properties, trackingUrl: URL, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
+  extends DonutAppTask(config, trackingUrl, logicalPartition, totalLogicalPartitions, topics) {
 
   type MESSAGE = KeyedMessage[ByteBuffer, ByteBuffer]
 
