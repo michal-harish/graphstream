@@ -11,6 +11,7 @@ import net.imagini.common.message.VDNAUserImport
 import net.imagini.common.messaging.serde.VDNAUniversalDeserializer
 import net.imagini.dxp.common._
 import org.apache.donut.metrics.{Counter, Throughput}
+import org.apache.donut.utils.ByteUtils
 import org.apache.donut.{DonutAppTask, Fetcher, FetcherDelta}
 
 /**
@@ -29,7 +30,7 @@ class SyncsToGraphProcessingUnit(
   val idSpaceSet = Set("a", "r", "d")
   val blacklists = new BlackLists
 
-  val snappyProducer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](async = true, numAcks = 0, batchSize = 500)
+  val snappyProducer = kafkaUtils.snappyAsyncProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 500)
 
   override def onShutdown: Unit = {
     snappyProducer.close
@@ -40,11 +41,11 @@ class SyncsToGraphProcessingUnit(
   override def awaitingTermination: Unit = {
     val period = (System.currentTimeMillis - ts)
     ts = System.currentTimeMillis
-    sendMetric("in:VDNAUserImport/sec", classOf[Throughput], counterReceived.getAndSet(0) * 1000 / period)
-    sendMetric("in:filter/sec", classOf[Throughput], counterFiltered.getAndSet(0)* 1000 / period)
-    sendMetric("in:valid/sec", classOf[Throughput], counterValid.getAndSet(0) * 1000 / period)
-    sendMetric("out:errors", classOf[Counter], counterErrors.get)
-    sendMetric("out:graphstream/sec", classOf[Throughput], counterProduced.getAndSet(0) * 1000 / period)
+    ui.updateMetric("in:VDNAUserImport/sec", classOf[Throughput], counterReceived.getAndSet(0) * 1000 / period)
+    ui.updateMetric("in:filter/sec", classOf[Throughput], counterFiltered.getAndSet(0 )* 1000 / period)
+    ui.updateMetric("in:valid/sec", classOf[Throughput], counterValid.getAndSet(0) * 1000 / period)
+    ui.updateMetric("out:errors", classOf[Counter], counterErrors.get)
+    ui.updateMetric("out:graphstream/sec", classOf[Throughput], counterProduced.getAndSet(0) * 1000 / period)
   }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {
@@ -88,12 +89,12 @@ class SyncsToGraphProcessingUnit(
       snappyProducer.send(
         new KeyedMessage(
           "graphdelta",
-            BSPMessage.encodeKey(vdnaId),
-            BSPMessage.encodePayload((1, Map(partnerId -> edge)))),
+          ByteUtils.bufToArray(BSPMessage.encodeKey(vdnaId)),
+          ByteUtils.bufToArray(BSPMessage.encodePayload((1, Map(partnerId -> edge))))),
         new KeyedMessage(
           "graphdelta",
-            BSPMessage.encodeKey(partnerId),
-            BSPMessage.encodePayload((1, Map(vdnaId -> edge))))
+            ByteUtils.bufToArray(BSPMessage.encodeKey(partnerId)),
+            ByteUtils.bufToArray(BSPMessage.encodePayload((1, Map(vdnaId -> edge)))))
       )
       counterProduced.addAndGet(2L)
     } catch {

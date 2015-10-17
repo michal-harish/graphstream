@@ -11,18 +11,15 @@ import net.imagini.dxp.common.VidKafkaPartitioner
 import org.apache.donut._
 import org.apache.donut.memstore.MemStoreLogMap
 import org.apache.donut.metrics.{Counter, Ratio, Throughput}
-import org.apache.donut.utils.ByteUtils
 import org.apache.donut.utils.logmap.ConcurrentLogHashMap
 
 /**
  * Created by mharis on 14/09/15.
  */
 class ConnectedBSPProcessingUnit(
-
   config: Properties, trackingUrl: URL, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
   extends DonutAppTask(config, trackingUrl, logicalPartition, totalLogicalPartitions, topics) {
 
-  //kafka 0.8.2 producers are always asynchronous so we have to prepare for copying the data
   type MESSAGE = KeyedMessage[ByteBuffer, ByteBuffer]
 
   val evictions = new AtomicLong(0)
@@ -53,44 +50,35 @@ class ConnectedBSPProcessingUnit(
         throw new IllegalArgumentException("Key cannot be null or empty")
       }
       evictions.incrementAndGet
-      //key is a sliced bytebuffer which may be re-used so we need to make a copy for the kafka async producer
-      val keyCopy = ByteBuffer.wrap(ByteUtils.bufToArray(key))
       produce(List(
-        new KeyedMessage("graphstate", keyCopy, null.asInstanceOf[ByteBuffer]),
-        new KeyedMessage("graphdelta", keyCopy, null.asInstanceOf[ByteBuffer])
+        new KeyedMessage("graphstate", key, null.asInstanceOf[ByteBuffer]),
+        new KeyedMessage("graphdelta", key, null.asInstanceOf[ByteBuffer])
       ))
     }
   }
 
   private val processor = new ConnectedBSPProcessor(minEdgeProbability = 0.75, new MemStoreLogMap(logmap))
 
-  private val deltaProducer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](async = false, numAcks = -1, batchSize = 1000)
-
-  private val stateProducer = kafkaUtils.createCompactProducer[VidKafkaPartitioner](async = false, numAcks = -1, batchSize = 200)
-
-  override def onShutdown: Unit = {
-    deltaProducer.close
-    stateProducer.close
-  }
-
   @volatile var ts = System.currentTimeMillis
 
   override def awaitingTermination {
     val period = (System.currentTimeMillis - ts)
     ts = System.currentTimeMillis
-    sendMetric("gs:in/sec", classOf[Throughput], stateIn.getAndSet(0) * 1000 / period)
-    sendMetric("gs:invalid", classOf[Counter], stateInvalid.get)
-    sendMetric("gs:out/sec", classOf[Throughput], stateOut.getAndSet(0) * 1000 / period)
+    ui.updateMetric("gs:in/sec", classOf[Throughput], stateIn.getAndSet(0) * 1000 / period)
+    ui.updateMetric("gs:invalid", classOf[Counter], stateInvalid.get)
+    ui.updateMetric("gs:out/sec", classOf[Throughput], stateOut.getAndSet(0) * 1000 / period)
 
-    sendMetric("st:size", classOf[Counter], processor.memstore.size)
-    sendMetric("st:evictions/sec", classOf[Throughput], evictions.getAndSet(0) * 1000 / period)
-    sendMetric("st:memory.mb", classOf[Ratio], s"${processor.memstore.sizeInBytes / 1024 / 1024}/${maxMemoryMemstoreMb}", hint = s"${processor.memstore.stats(true).mkString("\n")}")
-    sendMetric("st:bsp-miss", classOf[Counter], processor.bspMiss.get)
-    sendMetric("st:bsp-over", classOf[Counter], processor.bspOverflow.get)
+    ui.updateMetric("st:size", classOf[Counter], processor.memstore.size)
+    ui.updateMetric("st:evictions/sec", classOf[Throughput], evictions.getAndSet(0) * 1000 / period)
+    ui.updateMetric("st:memory.mb", classOf[Ratio],
+      value = s"${processor.memstore.sizeInBytes / 1024 / 1024}/${maxMemoryMemstoreMb}",
+      hint = s"${processor.memstore.stats(true).mkString("\n")}")
+    ui.updateMetric("st:bsp-miss", classOf[Counter], processor.bspMiss.get)
+    ui.updateMetric("st:bsp-over", classOf[Counter], processor.bspOverflow.get)
 
-    sendMetric("d:in/sec", classOf[Throughput], deltaIn.getAndSet(0) * 1000 / period)
-    sendMetric("d:invalid/sec", classOf[Throughput], deltaInvalid.getAndSet(0))
-    sendMetric("d:out/sec", classOf[Throughput], deltaOut.getAndSet(0) * 1000 / period)
+    ui.updateMetric("d:in/sec", classOf[Throughput], deltaIn.getAndSet(0) * 1000 / period)
+    ui.updateMetric("d:invalid/sec", classOf[Throughput], deltaInvalid.getAndSet(0))
+    ui.updateMetric("d:out/sec", classOf[Throughput], deltaOut.getAndSet(0) * 1000 / period)
   }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {
@@ -132,6 +120,11 @@ class ConnectedBSPProcessingUnit(
     }
   }
 
+  /**
+   * Transparently produce messages of type (ByteBuffer, ByteBuffer).
+   *
+   * @param outputMessages
+   */
   def produce(outputMessages: List[MESSAGE]): Unit = {
     outputMessages.foreach(message => {
       message.topic match {
@@ -146,6 +139,16 @@ class ConnectedBSPProcessingUnit(
       }
     })
   }
+
+  private val deltaProducer = kafkaUtils.snappySyncProducer[VidKafkaPartitioner](numAcks = -1)
+  private val stateProducer = kafkaUtils.compactSyncProducer[VidKafkaPartitioner](numAcks = -1) //batchSize = 500
+
+  override def onShutdown: Unit = {
+    deltaProducer.close
+    stateProducer.close
+  }
+
+
 
 
 }

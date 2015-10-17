@@ -7,6 +7,7 @@ import java.util.Properties
 import kafka.producer.{KeyedMessage, Producer}
 import net.imagini.dxp.common._
 import org.apache.donut.KafkaUtils
+import org.apache.donut.utils.ByteUtils
 
 import scala.io.Source
 
@@ -45,7 +46,7 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
 
   val kafkaUtils = new KafkaUtils(config)
   val decoder = new CWDecoder(date, mobileIdSpace, probabilityThreshold)
-  var producer: Producer[ByteBuffer, ByteBuffer] = null
+  var producer: Producer[Array[Byte], Array[Byte]] = null
 
   def processStdIn: Unit = {
 
@@ -103,8 +104,7 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
 
     var numHardErrors = 0
     while (true) try {
-      produce(new KeyedMessage(
-        "graphdelta",
+      produce((
         BSPMessage.encodeKey(pair._1),
         BSPMessage.encodePayload((1, Map(pair._2)))))
       return
@@ -128,13 +128,13 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
     }
   }
 
-  private def produce(message: KeyedMessage[ByteBuffer, ByteBuffer]): Unit = {
+  private def produce(message: (ByteBuffer, ByteBuffer)): Unit = {
     var numSoftErrors = 0
     while (true) try {
       if (producer == null) {
-        producer = kafkaUtils.createSnappyProducer[VidKafkaPartitioner](async = true, numAcks = 0, batchSize = 500)
+        producer = kafkaUtils.snappyAsyncProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 500)
       }
-      producer.send(message)
+      producer.send(new KeyedMessage("graphdelta", ByteUtils.bufToArray(message._1), ByteUtils.bufToArray(message._2)))
       return
     } catch {
       case e: IOException => {

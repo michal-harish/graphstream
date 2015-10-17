@@ -104,7 +104,7 @@ log.cleaner.enable=true
 ### Creating normal topics with retention
 
 ```bash
-./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 1 --config cleanup.policy=delete --config retention.bytes=2147483648 
+./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 1 --config cleanup.policy=delete --config retention.bytes=1073741824 
 ```
 
 ### Creating a compacted topic with some special behaviours

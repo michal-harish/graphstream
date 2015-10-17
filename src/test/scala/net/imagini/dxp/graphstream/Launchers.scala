@@ -25,11 +25,11 @@ object YARNLaunchGraphToHBase extends App {
  */
 
 object DebugLocalSyncsToGraph extends App {
-  new SyncsToGraphApplication(Config).runLocally(debugOnePartition = 0)
+  new SyncsToGraphApplication(Config).runLocally()
 }
 
 object DebugLocalConnectedBSP extends App {
-  new DebugConnectedBSPApplication(Config).runLocally(debugOnePartition = 6) //
+  new DebugConnectedBSPApplication(Config).runLocally(debugOnePartition = 6)
 }
 
 object DebugYARNConnectedBSP extends App {

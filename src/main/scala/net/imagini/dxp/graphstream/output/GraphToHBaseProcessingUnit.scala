@@ -65,9 +65,9 @@ class GraphToHBaseProcessingUnit(config: Properties, trackingUrl: URL, logicalPa
   override def awaitingTermination: Unit = {
     val period = (System.currentTimeMillis - ts)
     ts = System.currentTimeMillis
-    sendMetric("in:graphdelta/sec", classOf[Throughput], deltaCounter.getAndSet(0) * 1000 / period)
-    sendMetric(s"${tableNameAsString}:put/sec", classOf[Throughput], putCounter.getAndSet(0) * 1000 / period)
-    sendMetric(s"${tableNameAsString}:del/sec", classOf[Throughput], deleteCounter.getAndSet(0) * 1000 / period)
+    ui.updateMetric("in:graphdelta/sec", classOf[Throughput], deltaCounter.getAndSet(0) * 1000 / period)
+    ui.updateMetric(s"${tableNameAsString}:put/sec", classOf[Throughput], putCounter.getAndSet(0) * 1000 / period)
+    ui.updateMetric(s"${tableNameAsString}:del/sec", classOf[Throughput], deleteCounter.getAndSet(0) * 1000 / period)
   }
 
   override protected def onShutdown: Unit = {
