@@ -13,6 +13,8 @@ import org.scalatest.{Matchers, FlatSpec}
  */
 class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
 
+  type MESSAGE = KeyedMessage[ByteBuffer, ByteBuffer]
+
   behavior of "ConnectedBSPProcessor"
 
   val processor = new ConnectedBSPProcessor(minEdgeProbability = 0.39,
@@ -106,11 +108,11 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
 
   //TODO test larger volume behaviour with eviction
 
-  private def processRecursively(key: ByteBuffer, payload: ByteBuffer): List[KeyedMessage[ByteBuffer, ByteBuffer]] = {
-    val output = processor.processDeltaInput(key, payload)
-    output ++ output.filter(_.topic == "graphdelta").flatMap(message => {
+  private def processRecursively(key: ByteBuffer, payload: ByteBuffer): List[MESSAGE] = {
+    val output: List[MESSAGE] = processor.processDeltaInput(key, payload)
+    output ++ output.filter(_.topic == "graphdelta").flatMap{ message => {
       processRecursively(message.key, message.message)
-    })
+    }}
   }
 
   private def message(topic: String, encoded: (ByteBuffer, ByteBuffer)) = {
@@ -126,10 +128,10 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
     }.toMap
   }
 
-  private def print(messages: List[KeyedMessage[ByteBuffer, ByteBuffer]]): Unit = {
-    messages.foreach(message => {
+  private def print(messages: List[MESSAGE]): Unit = {
+    messages.foreach{ case message  => {
       println(s"${message.topic}: ${BSPMessage.decodeKey(message.key)} -> ${BSPMessage.decodePayload(message.message)}")
-    })
+    }}
   }
 
   private def print(state: Map[Vid, Map[Vid, Edge]]) = {

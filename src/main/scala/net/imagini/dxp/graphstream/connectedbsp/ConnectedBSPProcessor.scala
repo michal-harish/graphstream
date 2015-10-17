@@ -24,39 +24,15 @@ class ConnectedBSPProcessor(minEdgeProbability: Double, val memstore: MemStore) 
   val MAX_ITERATIONS = 3
   private val MAX_EDGES = 99
 
-  val invalid = new AtomicLong(0)
-  val stateIn = new AtomicLong(0)
-  val deltaIn = new AtomicLong(0)
-  val excess = new AtomicLong(0)
-  val miss = new AtomicLong(0)
-  val deltaOut = new AtomicLong(0)
+  val bspOverflow = new AtomicLong(0)
+  val bspMiss = new AtomicLong(0)
 
-  def bootState(msgKey: ByteBuffer, payload: ByteBuffer): List[MESSAGE]  = {
-    val vid = BSPMessage.decodeKey(msgKey)
-    BSPMessage.encodeKey(vid) match {
-      case reconstructedKey if (!reconstructedKey.equals(msgKey)) => {
-        invalid.incrementAndGet
-        List(
-          new KeyedMessage("graphstate", msgKey, null),
-          new KeyedMessage("graphdelta", reconstructedKey, payload)
-        )
-      }
-      case validKey => BSPMessage.decodePayload(payload) match {
-        case null => List()
-        case (i, edges) => {
-          BSPMessage.encodePayload((i, edges)) match {
-            case reconstructedPayload if (!reconstructedPayload.equals(payload)) => {
-              invalid.incrementAndGet
-              List(new KeyedMessage("graphstate", validKey, reconstructedPayload))
-            }
-            case validPayload => {
-              memstore.put(validKey, validPayload)
-              stateIn.incrementAndGet
-              List()
-            }
-          }
-        }
-      }
+  def bootState(msgKey: ByteBuffer, payload: ByteBuffer): Unit = {
+    try {
+      memstore.put(msgKey, payload)
+    } catch {
+      case e: IllegalArgumentException => throw e
+      case e: Throwable => throw new IllegalStateException("Invalid Key ByteBuffer " + msgKey, e)
     }
   }
 
@@ -70,49 +46,57 @@ class ConnectedBSPProcessor(minEdgeProbability: Double, val memstore: MemStore) 
       //eviction message was generated here, no need to process more
       return List()
     }
-    deltaIn.incrementAndGet
-    val output = List.newBuilder[MESSAGE]
-    memstore.get(key, b => b) match {
-      case None => {
-        miss.incrementAndGet
-        output += updateState(key, payload)
-      }
-      case Some(null) => excess.incrementAndGet
+    try {
+      val output = List.newBuilder[MESSAGE]
+      memstore.get(key, b => b) match {
+        case None => {
+          bspMiss.incrementAndGet
+          memstore.put(key, payload)
+          output += new KeyedMessage("graphstate", key, payload)
+        }
+        case Some(null) => bspOverflow.incrementAndGet
 
-      case Some(previousState) => {
-        val (iteration, inputEdges) = BSPMessage.decodePayload(payload)
-        val existingEdges = BSPMessage.decodePayload(previousState)._2
+        case Some(previousState) => {
+          val (iteration, inputEdges) = BSPMessage.decodePayload(payload)
+          val existingEdges = BSPMessage.decodePayload(previousState)._2
 
-        val evictedEdges = inputEdges.filter {
-          case (inDest, inProps) => inProps.probability == 0 && existingEdges.contains(inDest)
-        }.map(_._1)
+          val evictedEdges = inputEdges.filter {
+            case (inDest, inProps) => inProps.probability == 0 && existingEdges.contains(inDest)
+          }.map(_._1)
 
-        val additionalEdges = inputEdges.filter {
-          case (inDest, inProps) => inProps.probability > 0 && !existingEdges.exists {
-            case (exDest, exProps) => exDest == inDest && exProps.probability >= inProps.probability
+          val additionalEdges = inputEdges.filter {
+            case (inDest, inProps) => inProps.probability > 0 && !existingEdges.exists {
+              case (exDest, exProps) => exDest == inDest && exProps.probability >= inProps.probability
+            }
+          }
+
+          val newState = existingEdges ++ additionalEdges -- evictedEdges
+          if (newState.size > MAX_EDGES) {
+            //evict offending key and remove all the edges pointing to it
+            val nullPayload = null.asInstanceOf[ByteBuffer]
+            memstore.put(key, nullPayload)
+            output += new KeyedMessage("graphdelta", key, nullPayload)
+            output += new KeyedMessage("graphstate", key, nullPayload)
+            val evictDest = BSPMessage.decodeKey(key)
+            val evictEdge = Edge(Edge.VENDOR_CODE_UNKNOWN, 0.0, System.currentTimeMillis)
+            output ++= propagateEdges(iteration, Map(evictDest -> evictEdge), existingEdges)
+          } else if (additionalEdges.size > 0 || evictedEdges.size > 0) {
+            if (iteration < MAX_ITERATIONS && additionalEdges.size > 0) {
+              output ++= propagateEdges(iteration, newState, existingEdges)
+              output ++= propagateEdges(iteration, existingEdges, newState)
+            }
+            val payload = BSPMessage.encodePayload((iteration, newState))
+            memstore.put(key, payload)
+            output += new KeyedMessage("graphstate", key, payload)
           }
         }
-
-        val newState = existingEdges ++ additionalEdges -- evictedEdges
-        if (newState.size > MAX_EDGES) {
-          //evict offending key and remove all the edges pointing to it
-          val evictDest = BSPMessage.decodeKey(key)
-          val evictEdge = Edge(Edge.VENDOR_CODE_UNKNOWN, 0.0, System.currentTimeMillis)
-          output ++= propagateEdges(iteration, Map(evictDest -> evictEdge), existingEdges)
-          output += new KeyedMessage("graphdelta", key, null.asInstanceOf[ByteBuffer])
-          output += updateState(key, null.asInstanceOf[ByteBuffer])
-        } else if (additionalEdges.size > 0 || evictedEdges.size > 0) {
-          if (iteration < MAX_ITERATIONS && additionalEdges.size > 0) {
-            output ++= propagateEdges(iteration, newState, existingEdges)
-            output ++= propagateEdges(iteration, existingEdges, newState)
-          }
-          output += updateState(key, BSPMessage.encodePayload((iteration, newState)))
-        }
       }
+      val outputMessages = output.result
+      outputMessages
+    } catch {
+      case e: IllegalArgumentException => throw e
+      case e: Throwable => throw new IllegalStateException("Invalid Key ByteBuffer " + key, e)
     }
-    val outputMessages = output.result
-    deltaOut.addAndGet(outputMessages.size)
-    outputMessages
   }
 
   /**
@@ -135,11 +119,6 @@ class ConnectedBSPProcessor(minEdgeProbability: Double, val memstore: MemStore) 
       }
     }
     }
-  }
-
-  private def updateState(key: ByteBuffer, payload: ByteBuffer): MESSAGE = {
-    memstore.put(key, payload)
-    new KeyedMessage("graphstate", key, payload)
   }
 
 }

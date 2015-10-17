@@ -110,7 +110,7 @@ log.cleaner.enable=true
 ### Creating a compacted topic with some special behaviours
 And then creating topic with compact cleanup policy
 ```bash
-./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphstate --partitions 32 --replication-factor 1 --config cleanup.policy=compact --config min.cleanable.dirty.ratio=0.2 
+./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphstate --partitions 32 --replication-factor 1 --config cleanup.policy=compact --config min.cleanable.dirty.ratio=0.2 --config delete.retention.ms=0 
 ```
 
 Altering the topic to practically ignore the tombstone retention ..10 minutes from default 24 hours

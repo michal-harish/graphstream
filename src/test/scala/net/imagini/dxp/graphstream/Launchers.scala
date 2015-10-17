@@ -1,38 +1,22 @@
 package net.imagini.dxp.graphstream
 
-import net.imagini.dxp.graphstream.connectedbsp.{ConnectedBSP, ConnectedBSPApplication}
-import net.imagini.dxp.graphstream.debugging.{GraphStateCompactorApp, GraphStateCompactor, GraphStatePrinter}
+import net.imagini.dxp.graphstream.connectedbsp.ConnectedBSP
+import net.imagini.dxp.graphstream.debugging.{DebugConnectedBSP, DebugConnectedBSPApplication, GraphStatePrinter}
 import net.imagini.dxp.graphstream.ingest.{SyncsToGraph, SyncsToGraphApplication}
 import net.imagini.dxp.graphstream.output.{GraphToHBase, GraphToHBaseApplication}
 import org.apache.donut.KafkaUtils
 
-/**
- * Created by mharis on 14/09/15.
- *
- * GraphStream components for launching from an IDE
- */
 
-object ConnectedBSPLocalLauncher extends App {
-  new ConnectedBSPApplication(Config).runLocally(debugOnePartition = 6)
-}
 
-object ConnectedBSPYarnLauncher extends App {
+object YARNLaunchConnectedBSP extends App {
   ConnectedBSP.main(Array(Config.path, "wait"))
 }
 
-object SyncsToGraphLocalLauncher extends App {
-  new SyncsToGraphApplication(Config).runLocally(debugOnePartition = 0)
-}
-
-object SyncsToGraphYarnLauncher extends App {
+object YARNLaunchSyncsToGraph extends App {
   SyncsToGraph.main(Array(Config.path, "wait"))
 }
 
-object GraphToHBaseLocalLauncher extends App {
-  new GraphToHBaseApplication(Config).runLocally(debugOnePartition = 0)
-}
-
-object GraphToHBaseYarnLauncher extends App {
+object YARNLaunchGraphToHBase extends App {
   GraphToHBase.main(Array(Config.path, "wait"))
 }
 
@@ -40,16 +24,23 @@ object GraphToHBaseYarnLauncher extends App {
  * Debugger launchers
  */
 
-object DebugGraphStateLocal extends App {
-  new GraphStateCompactorApp(Config).runLocally() //debugOnePartition = 5
+object DebugLocalSyncsToGraph extends App {
+  new SyncsToGraphApplication(Config).runLocally(debugOnePartition = 0)
 }
 
-object DebugGraphStateYarn extends App {
-  GraphStateCompactor.main(Array(Config.path, "wait"))
+object DebugLocalConnectedBSP extends App {
+  new DebugConnectedBSPApplication(Config).runLocally(debugOnePartition = 6) //
 }
 
+object DebugYARNConnectedBSP extends App {
+  DebugConnectedBSP.main(Array(Config.path, "wait"))
+}
 
-object DebugGraphDelta extends App {
+object DebugLocalGraphToHBase extends App {
+  new GraphToHBaseApplication(Config).runLocally(debugOnePartition = 0)
+}
+
+object DebugGraphDeltaPrinter extends App {
   GraphStatePrinter.main(Array(Config.path, "2"))
 }
 
