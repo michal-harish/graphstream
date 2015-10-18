@@ -4,8 +4,8 @@ import java.nio.ByteBuffer
 import kafka.producer.KeyedMessage
 import net.imagini.dxp.common.{Vid, Edge, BSPMessage}
 import org.apache.donut.memstore.MemStoreLogMap
-import org.apache.donut.utils.ByteUtils
-import org.apache.donut.utils.logmap.ConcurrentLogHashMap
+import org.mha.utils.ByteUtils
+import org.mha.utils.logmap.ConcurrentLogHashMap
 import org.scalatest.{Matchers, FlatSpec}
 
 /**

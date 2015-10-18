@@ -12,7 +12,7 @@ import org.apache.donut.DonutApp
  *
  */
 
-class GraphToHBaseApplication(config: Properties) extends DonutApp[GraphToHBaseProcessingUnit]({
+class GraphToHBaseStreaming(config: Properties) extends DonutApp[GraphToHBaseProcessingUnit]({
 
   //Memory Footprint (32 partitions in one topic) = (32 x 1.5Gb) = 48 Gb
   config.setProperty("group.id", "GraphstreamHBaseLoader")

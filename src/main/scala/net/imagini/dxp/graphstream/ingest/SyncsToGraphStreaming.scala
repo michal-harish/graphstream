@@ -13,7 +13,7 @@ import org.apache.donut.DonutApp
  *
  */
 
-class SyncsToGraphApplication(config: Properties) extends DonutApp[SyncsToGraphProcessingUnit]({
+class SyncsToGraphStreaming(config: Properties) extends DonutApp[SyncsToGraphProcessingUnit]({
 
   //Memory Footprint: 6 x 1Gb = 6 Gb
   config.setProperty("group.id", "GraphSyncsStreamingBSP")

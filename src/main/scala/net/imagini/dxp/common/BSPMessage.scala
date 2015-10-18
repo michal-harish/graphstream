@@ -3,7 +3,7 @@ package net.imagini.dxp.common
 import java.nio.ByteBuffer
 import java.util
 
-import org.apache.donut.utils.ByteUtils
+import org.mha.utils.ByteUtils
 
 /**
  * Created by mharis on 10/09/15.

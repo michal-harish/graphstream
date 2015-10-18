@@ -7,7 +7,7 @@ import java.util.Properties
 import kafka.producer.{KeyedMessage, Producer}
 import net.imagini.dxp.common._
 import org.apache.donut.KafkaUtils
-import org.apache.donut.utils.ByteUtils
+import org.mha.utils.ByteUtils
 
 import scala.io.Source
 

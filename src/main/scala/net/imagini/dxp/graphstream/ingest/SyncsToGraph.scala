@@ -15,6 +15,6 @@ object SyncsToGraph {
   def main(args: Array[String]) = {
     val config = new Properties
     config.load( new FileInputStream(args(0)))
-    new SyncsToGraphApplication(config).runOnYarn(awaitCompletion = args.length == 2 && args(1) == "wait")
+    new SyncsToGraphStreaming(config).runOnYarn(awaitCompletion = args.length == 2 && args(1) == "wait")
   }
 }

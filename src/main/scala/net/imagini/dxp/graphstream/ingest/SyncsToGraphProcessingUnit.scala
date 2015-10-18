@@ -11,8 +11,8 @@ import net.imagini.common.message.VDNAUserImport
 import net.imagini.common.messaging.serde.VDNAUniversalDeserializer
 import net.imagini.dxp.common._
 import org.apache.donut.metrics.{Counter, Throughput}
-import org.apache.donut.utils.ByteUtils
 import org.apache.donut.{DonutAppTask, Fetcher, FetcherDelta}
+import org.mha.utils.ByteUtils
 
 /**
  * Created by mharis on 15/09/15.
@@ -41,11 +41,11 @@ class SyncsToGraphProcessingUnit(
   override def awaitingTermination: Unit = {
     val period = (System.currentTimeMillis - ts)
     ts = System.currentTimeMillis
-    ui.updateMetric("in:VDNAUserImport/sec", classOf[Throughput], counterReceived.getAndSet(0) * 1000 / period)
-    ui.updateMetric("in:filter/sec", classOf[Throughput], counterFiltered.getAndSet(0 )* 1000 / period)
-    ui.updateMetric("in:valid/sec", classOf[Throughput], counterValid.getAndSet(0) * 1000 / period)
-    ui.updateMetric("out:errors", classOf[Counter], counterErrors.get)
-    ui.updateMetric("out:graphstream/sec", classOf[Throughput], counterProduced.getAndSet(0) * 1000 / period)
+    ui.updateMetric("input VDNAUserImport/sec", classOf[Throughput], counterReceived.getAndSet(0) * 1000 / period)
+    ui.updateMetric("input filter/sec", classOf[Throughput], counterFiltered.getAndSet(0 )* 1000 / period)
+    ui.updateMetric("input valid/sec", classOf[Throughput], counterValid.getAndSet(0) * 1000 / period)
+    ui.updateMetric("output errors", classOf[Counter], counterErrors.get)
+    ui.updateMetric("output graphstream/sec", classOf[Throughput], counterProduced.getAndSet(0) * 1000 / period)
   }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {

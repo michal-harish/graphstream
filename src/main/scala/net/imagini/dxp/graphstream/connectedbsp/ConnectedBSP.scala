@@ -15,6 +15,6 @@ object ConnectedBSP {
   def main(args: Array[String]) = {
     val config = new Properties
     config.load(new FileInputStream(args(0)))
-    new ConnectedBSPApplication(config).runOnYarn(awaitCompletion = args.length == 2 && args(1) == "wait")
+    new ConnectedGraphBSPStreaming(config).runOnYarn(awaitCompletion = args.length == 2 && args(1) == "wait")
   }
 }

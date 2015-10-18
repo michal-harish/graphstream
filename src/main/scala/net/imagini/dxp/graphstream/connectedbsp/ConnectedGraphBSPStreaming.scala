@@ -17,7 +17,7 @@ import org.apache.donut.DonutApp
  *
  */
 
-class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPProcessingUnit]({
+class ConnectedGraphBSPStreaming(config: Properties) extends DonutApp[ConnectedBSPProcessingUnit]({
 
   // Memory Footprint (32 partitions in both topics) = 200g + (32 x 1g overhead) + 3g= 335 Gb
   config.setProperty("group.id", "GraphStreamingBSP")
@@ -27,7 +27,7 @@ class ConnectedBSPApplication(config: Properties) extends DonutApp[ConnectedBSPP
   config.setProperty("task.overhead.memory.mb", "1024")
   config.setProperty("yarn1.jvm.args", "-XX:+UseSerialGC -XX:NewRatio=2 -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config.setProperty("yarn1.restart.enabled", "true")
-  config.setProperty("yarn1.restart.failed.retries", "100") // FIXME 3
+  config.setProperty("yarn1.restart.failed.retries", "3")
   config.setProperty("yarn1.master.memory.mb", "3072")
   config
 })

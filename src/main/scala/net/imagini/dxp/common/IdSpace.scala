@@ -1,6 +1,6 @@
 package net.imagini.dxp.common
 
-import org.apache.donut.utils.ByteUtils
+import org.mha.utils.ByteUtils
 
 trait Cookie {}
 

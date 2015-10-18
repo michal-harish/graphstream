@@ -104,7 +104,7 @@ log.cleaner.enable=true
 ### Creating normal topics with retention
 
 ```bash
-./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 1 --config cleanup.policy=delete --config retention.bytes=1073741824 
+./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 1 --config cleanup.policy=delete --config retention.bytes=2147483648 
 ```
 
 ### Creating a compacted topic with some special behaviours
@@ -187,6 +187,9 @@ The reason for the test package is that many dependencies are provided and not a
 2. LocalLaunch - is for debugging and doesn't actually submit the application to yarn and all streaming and processing happens locally
 
 ### TODOs  
+- Show container address
+- Add memory footprint into the ui instead of small h2
+- add metric to bsp how many times it received edges it already saw
 - Edges should not be represented as Map[Vid, EdgeProps] but rather Set[Edge] where Edge object would contain the dest Vid to allow for duplicate connections with different properties 
 - SyncsToGraph could have a for short window memstore for better detection of bad data, robots, etc.  
 
