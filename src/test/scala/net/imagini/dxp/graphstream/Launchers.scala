@@ -1,6 +1,6 @@
 package net.imagini.dxp.graphstream
 
-import net.imagini.dxp.graphstream.connectedbsp.ConnectedBSP
+import net.imagini.dxp.graphstream.connectedbsp.ConnectedGraphBSPStreaming
 import net.imagini.dxp.graphstream.debugging.{DebugConnectedBSP, DebugConnectedBSPApplication, GraphStatePrinter}
 import net.imagini.dxp.graphstream.ingest.{SyncsToGraph, SyncsToGraphStreaming}
 import net.imagini.dxp.graphstream.output.{GraphToHBase, GraphToHBaseStreaming}
@@ -9,7 +9,7 @@ import org.apache.donut.KafkaUtils
 
 
 object YARNLaunchConnectedBSP extends App {
-  ConnectedBSP.main(Array(Config.path, "wait"))
+  ConnectedGraphBSPStreaming.main(Array(Config.path, "wait"))
 }
 
 object YARNLaunchSyncsToGraph extends App {

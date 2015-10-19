@@ -1,7 +1,24 @@
 package net.imagini.dxp.graphstream.connectedbsp
 
+import java.io.FileInputStream
 import java.util.Properties
 import org.apache.donut.DonutApp
+
+/**
+ * Created by mharis on 22/09/15.
+ *
+ * This class is for submitting the job with `./submit` script, e.g.:
+ *
+ * ./submit net.imagini.dxp.graphstream.connectedbsp.ConnectedGraphBSPStreaming /etc/vdna/graphstream/config.properties
+ */
+
+object ConnectedGraphBSPStreaming {
+  def main(args: Array[String]) = {
+    val config = new Properties
+    config.load(new FileInputStream(args(0)))
+    new ConnectedGraphBSPStreaming(config).runOnYarn(awaitCompletion = args.length == 2 && args(1) == "wait")
+  }
+}
 
 /**
  * Created by mharis on 14/09/15.
@@ -19,7 +36,7 @@ import org.apache.donut.DonutApp
 
 class ConnectedGraphBSPStreaming(config: Properties) extends DonutApp[ConnectedBSPProcessingUnit]({
 
-  // Memory Footprint (32 partitions in both topics) = 200g + (32 x 1g overhead) + 3g= 335 Gb
+  // Memory Footprint (32 partitions in both topics) = 200g + (32 x 1g overhead) + 1g= 233 Gb
   config.setProperty("group.id", "GraphStreamingBSP")
   config.setProperty("topics", "graphdelta,graphstate")
   config.setProperty("cogroup", "true")
@@ -28,6 +45,9 @@ class ConnectedGraphBSPStreaming(config: Properties) extends DonutApp[ConnectedB
   config.setProperty("yarn1.jvm.args", "-XX:+UseSerialGC -XX:NewRatio=2 -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config.setProperty("yarn1.restart.enabled", "true")
   config.setProperty("yarn1.restart.failed.retries", "3")
-  config.setProperty("yarn1.master.memory.mb", "3072")
+
+  config.setProperty("yarn1.master.memory.mb", "1024")
+      //FIXME profile the app master - must be a leak this is way too much !
+      config.setProperty("yarn1.master.jvm.args", "-agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config
 })
