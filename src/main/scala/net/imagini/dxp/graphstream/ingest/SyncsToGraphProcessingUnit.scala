@@ -17,9 +17,7 @@ import org.mha.utils.ByteUtils
 /**
  * Created by mharis on 15/09/15.
  */
-class SyncsToGraphProcessingUnit(
-  config: Properties, trackingUrl: URL, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
-  extends DonutAppTask(config, trackingUrl, logicalPartition, totalLogicalPartitions, topics) {
+class SyncsToGraphProcessingUnit(config: Properties, args: Array[String]) extends DonutAppTask(config, args) {
 
   val vdnaMessageDecoder = new VDNAUniversalDeserializer
   val counterReceived = new AtomicLong(0)
@@ -41,11 +39,11 @@ class SyncsToGraphProcessingUnit(
   override def awaitingTermination: Unit = {
     val period = (System.currentTimeMillis - ts)
     ts = System.currentTimeMillis
-    ui.updateMetric("input VDNAUserImport/sec", classOf[Throughput], counterReceived.getAndSet(0) * 1000 / period)
-    ui.updateMetric("input filter/sec", classOf[Throughput], counterFiltered.getAndSet(0 )* 1000 / period)
-    ui.updateMetric("input valid/sec", classOf[Throughput], counterValid.getAndSet(0) * 1000 / period)
-    ui.updateMetric("output errors", classOf[Counter], counterErrors.get)
-    ui.updateMetric("output graphstream/sec", classOf[Throughput], counterProduced.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "input VDNAUserImport/sec", classOf[Throughput], counterReceived.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "input filter/sec", classOf[Throughput], counterFiltered.getAndSet(0 )* 1000 / period)
+    ui.updateMetric(partition, "input valid/sec", classOf[Throughput], counterValid.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "output errors", classOf[Counter], counterErrors.get)
+    ui.updateMetric(partition, "output graphstream/sec", classOf[Throughput], counterProduced.getAndSet(0) * 1000 / period)
   }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {

@@ -68,16 +68,16 @@
             <scope>provided</scope>
         </dependency>
         <!-- donut-core is included by source and expects hadoop and kafka to be provided so we specify version we run on our cluster -->
-        <dependency>
-            <groupId>com.nanohttpd</groupId>
-            <artifactId>nanohttpd</artifactId>
-            <version>2.1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.nanohttpd</groupId>
-            <artifactId>nanohttpd-webserver</artifactId>
-            <version>2.1.1</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.nanohttpd</groupId>-->
+            <!--<artifactId>nanohttpd</artifactId>-->
+            <!--<version>2.1.1</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>com.nanohttpd</groupId>-->
+            <!--<artifactId>nanohttpd-webserver</artifactId>-->
+            <!--<version>2.1.1</version>-->
+        <!--</dependency>-->
         <!--<dependency>-->
         <!--<groupId>org.mapdb</groupId>-->
         <!--<artifactId>mapdb</artifactId>-->

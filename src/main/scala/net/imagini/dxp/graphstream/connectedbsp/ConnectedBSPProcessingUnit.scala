@@ -1,6 +1,5 @@
 package net.imagini.dxp.graphstream.connectedbsp
 
-import java.net.URL
 import java.nio.ByteBuffer
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
@@ -17,9 +16,7 @@ import org.mha.utils.logmap.ConcurrentLogHashMap
 /**
  * Created by mharis on 14/09/15.
  */
-class ConnectedBSPProcessingUnit(
-  config: Properties, trackingUrl: URL, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
-  extends DonutAppTask(config, trackingUrl, logicalPartition, totalLogicalPartitions, topics) {
+class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extends DonutAppTask(config, args) {
 
   type MESSAGE = KeyedMessage[ByteBuffer, ByteBuffer]
 
@@ -35,9 +32,9 @@ class ConnectedBSPProcessingUnit(
   val deltaOut = new AtomicLong(0)
 
   val debug = config.getProperty("debug", "false").toBoolean
-  if (debug) println("DEBUG MODE ENABLED!")
+  if (debug) println("BSP DEBUG MODE ENABLED!")
 
-  val maxMemoryMemstoreMb = config.getProperty("direct.memory.mb").toInt / totalLogicalPartitions - 128
+  val maxMemoryMemstoreMb = config.getProperty("direct.memory.mb").toInt / numPartitions - 128
 
   private val logmap = new ConcurrentLogHashMap(
     maxMemoryMemstoreMb,
@@ -110,24 +107,24 @@ class ConnectedBSPProcessingUnit(
   override def awaitingTermination {
     val period = (System.currentTimeMillis - ts)
     ts = System.currentTimeMillis
-    ui.updateMetric("input state/sec", classOf[Throughput], stateIn.getAndSet(0) * 1000 / period)
-    ui.updateMetric("input state-error", classOf[Counter], stateInvalid.get)
-    ui.updateMetric("output state/sec", classOf[Throughput], stateOut.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "input state/sec", classOf[Throughput], stateIn.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "input state-error", classOf[Counter], stateInvalid.get)
+    ui.updateMetric(partition, "output state/sec", classOf[Throughput], stateOut.getAndSet(0) * 1000 / period)
 
-    ui.updateMetric("memstore bsp-miss", classOf[Counter], processor.bspMiss.get)
-    ui.updateMetric("memstore bsp-over", classOf[Counter], processor.bspOverflow.get)
-    ui.updateMetric("memstore evictions/sec", classOf[Throughput], evictions.getAndSet(0) * 1000 / period)
-    ui.updateMetric("memstore memory.mb", classOf[Ratio],
+    ui.updateMetric(partition, "memstore bsp-miss", classOf[Counter], processor.bspMiss.get)
+    ui.updateMetric(partition, "memstore bsp-over", classOf[Counter], processor.bspOverflow.get)
+    ui.updateMetric(partition, "memstore evictions/sec", classOf[Throughput], evictions.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "memstore memory.mb", classOf[Ratio],
       value = s"${processor.memstore.sizeInBytes / 1024 / 1024}/${maxMemoryMemstoreMb}",
       hint = s"${processor.memstore.stats(true).mkString("\n")}")
-    ui.updateMetric("memstore size", classOf[Counter], processor.memstore.size)
+    ui.updateMetric(partition, "memstore size", classOf[Counter], processor.memstore.size)
 
-    ui.updateMetric("input delta/sec", classOf[Throughput], deltaInThroughput.getAndSet(0) * 1000 / period)
-    ui.updateMetric("input delta-total", classOf[Counter], deltaIn.get)
-    ui.updateMetric("input delta-waste", classOf[Counter], deltaWaste.get)
-    ui.updateMetric("input delta-errors", classOf[Counter], deltaInvalid.get)
-    ui.updateMetric("output delta-total", classOf[Counter], deltaOut.get)
-    ui.updateMetric("output delta/sec", classOf[Throughput], deltaOutThroughput.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "input delta/sec", classOf[Throughput], deltaInThroughput.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "input delta-total", classOf[Counter], deltaIn.get)
+    ui.updateMetric(partition, "input delta-waste", classOf[Counter], deltaWaste.get)
+    ui.updateMetric(partition, "input delta-errors", classOf[Counter], deltaInvalid.get)
+    ui.updateMetric(partition, "output delta-total", classOf[Counter], deltaOut.get)
+    ui.updateMetric(partition, "output delta/sec", classOf[Throughput], deltaOutThroughput.getAndSet(0) * 1000 / period)
   }
 
 

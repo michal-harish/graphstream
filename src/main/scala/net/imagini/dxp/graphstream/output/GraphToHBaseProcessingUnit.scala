@@ -24,8 +24,7 @@ import org.slf4j.LoggerFactory
  * to the number of fetchers which all can proceed until the compaction thread kicks in and acquires the total number
  * and turns 'red'.
  */
-class GraphToHBaseProcessingUnit(config: Properties, trackingUrl: URL, logicalPartition: Int, totalLogicalPartitions: Int, topics: Seq[String])
-  extends DonutAppTask(config, trackingUrl, logicalPartition, totalLogicalPartitions, topics) {
+class GraphToHBaseProcessingUnit(config: Properties, args: Array[String]) extends DonutAppTask(config, args) {
 
   private val log = LoggerFactory.getLogger(classOf[GraphToHBaseProcessingUnit])
 
@@ -65,9 +64,9 @@ class GraphToHBaseProcessingUnit(config: Properties, trackingUrl: URL, logicalPa
   override def awaitingTermination: Unit = {
     val period = (System.currentTimeMillis - ts)
     ts = System.currentTimeMillis
-    ui.updateMetric("input graphdelta/sec", classOf[Throughput], deltaCounter.getAndSet(0) * 1000 / period)
-    ui.updateMetric(s"output ${tableNameAsString} put/sec", classOf[Throughput], putCounter.getAndSet(0) * 1000 / period)
-    ui.updateMetric(s"output ${tableNameAsString} del/sec", classOf[Throughput], deleteCounter.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "input graphdelta/sec", classOf[Throughput], deltaCounter.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, s"output ${tableNameAsString} put/sec", classOf[Throughput], putCounter.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, s"output ${tableNameAsString} del/sec", classOf[Throughput], deleteCounter.getAndSet(0) * 1000 / period)
   }
 
   override protected def onShutdown: Unit = {

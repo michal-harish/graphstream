@@ -29,7 +29,7 @@ object DebugLocalSyncsToGraph extends App {
 }
 
 object DebugLocalConnectedBSP extends App {
-  new DebugConnectedBSPApplication(Config).runLocally(debugOnePartition = 6)
+  new DebugConnectedBSPApplication(Config).runLocally() //(debugOnePartition = 1)
 }
 
 object DebugYARNConnectedBSP extends App {
