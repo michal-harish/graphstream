@@ -17,11 +17,12 @@
 ## Introduction and Use Case
 </a>
 
+### Introduction to Distributed Stream Processing
 
-### Introduction to Stream Processing paradigm
-Stream Processing is a super-abstraction for both real-time and batch processing: its primary objectives are throughput and scalability, not low-latency processing, altghouth that becomes an option too. Defined as such it can be seen as a micro-batch processing capable of processing efficiently batches as small as a single record/message and at the same time large backlogs ressembling the batch inputs we're used to with Hadoop and Spark.
+Stream Processing is a super-abstraction for both real time and batch processing: its primary objectives are throughput and scalability, not low-latency processing, altghouth that becomes an option too. Defined as such it can be seen as a micro-batch processing capable of processing efficiently batches as small as a single record/message and at the same time large backlogs ressembling the batch inputs we're used to with Hadoop and Spark.
 
-Besides the primary objectives it so happens that large stream processing pipelines are a bit easier to reason about in terms of applications ecosystem and their components and infrastructure have a [lot in common with the Unix Philosophy](http://www.confluent.io/blog/apache-kafka-samza-and-the-unix-philosophy-of-distributed-data), i.e. small components with simple functionality composed together by abstract input and output streams.
+Besides the primary objectives it so happens that large stream processing pipelines are a bit easier to reason about and operate in terms of applications ecosystem. Their architecture and infrastructure have a [lot in common with the Unix Philosophy](http://www.confluent.io/blog/apache-kafka-samza-and-the-unix-philosophy-of-distributed-data), i.e. small components with simple functionality composed together by abstract input and output streams, except they add the *distributed* element into the mix - if you're not familiar with the basics of distributed data streams - read about [Kafka]()
+
 
 ### VisualDNA Identity Graph
 
@@ -47,14 +48,14 @@ Most importantly however, Spark and HBase, even with the best co-partitioning mo
 
 GraphStream is a stream processing pipeline which replaces the **ingest** and **process** phases of the Spark workload described above. At the moment it has an output component which is different from the **apply** phase in the above description. The output here simply offloads the processed graph and continuously writes them to HBase. 
   
-If our experiment goes well, we can see that the state kept in HBase could be made completely obsolete, since we now have a constant-time in-memory representation of the graph spread across horizontally scalable processors. We could switch many of the downstream applications to in fact consumer either graphdelta or graphstate streams depending on the particulars but also we could expose the in-memory store of each processor as a simple distributed key-value store mapped onto RDD for analytics in Spark. We'll be looking at this in a near future but for now our streaming replacement for graph ingestion and processing sits on 300Gb of the same YARN cluster using about 70-80 cores. This represents 5% of our computing and memory capacity which is now constantly locked compared to spiky nature of batch jobs. This makes it almost precisely predictible in terms of resources and operationally, the streaming processors deployed in YARN 'feel' a lot more automated and maintainable then anticipated.
+If our experiment goes well, we can see that the state kept in HBase could be made completely obsolete, since we now have a constant-time in-memory representation of the graph spread across horizontally scalable processors. We could switch many of the downstream applications to in fact consumer either graphdelta or graphstate streams depending on the particulars but also we could expose the in-memory store of each processor as a simple distributed key-value store mapped onto RDD for analytics in Spark. We'll be looking at this in a near future but for now our streaming replacement for graph ingestion and processing sits on 300Gb of the same YARN cluster using about 70-80 cores. This represents 5% of our computing and memory capacity which is now constantly locked compared to spiky nature of batch jobs. This makes it almost precisely predictible in terms of resources and operationally, the streaming processors deployed in YARN 'feel' a lot more automated and maintainable.
 
 <a name="architecture">
 ## GraphStream Pipeline Architecture
 </a>
 
 <blockquote>
-NOTE: As it stands today, we think we could have used the **Apache Samza** as the processing framework as we have arrived at a nearly identical structure, but our original design how we thought about recursive stream processing was not compatible with Samza constructs and primitives. We will definitely explore this possibility in our next steps as we will be trying to move some of our machine learning algorithms into stream processing paradigm..
+NOTE: As it stands today, we think we could have used the Apache Samza as the processing framework as we have arrived at a nearly identical structure, but our original design how we thought about recursive stream processing was not compatible with Samza constructs and primitives. We will definitely explore this possibility in our next steps as we will be trying to move some of our machine learning algorithms into stream processing paradigm..
 </blockquote>
 
 The GraphStream Pipleine starts with syncs collected from Event Trackers or imported from partners and continues through GraphStream Application which processes and generates graph updates which are then off-loaded into HBase where there are mapped and available as Spark RDDs.
@@ -78,12 +79,25 @@ The GraphStream Application consists roughly of 3 stages each with one or more c
 
 ![Architecture](doc/GraphStream_architecture.png)
 
-While SyncsToGraph ahd GraphToHBase are simple stream-to-stream filter/map operators, the internal workings of ConnectedBSP requires a more detailed explanation. It also illustrates a general idea of local state in the realm of stream processing, and more specifically also *recurisve stateful stream processing*
+While SyncsToGraph ahd GraphToHBase are simple stream-to-stream filter/map operators, the internal workings of ConnectedBSP requires a more detailed explanation. It also illustrates a general idea of local state in the realm of stream processing, and more specifically also *recurisve stateful stream processing*.
 
 First we need a different kind of topic - a commit log which is supported by Kafka fetaure called [Log  Compaction](https://cwiki.apache.org/confluence/display/KAFKA/Log+Compaction). A topic 'graphstate' in our architecture is log-compacted.
 
 ![Compacted State](doc/GraphStream_state.png)
 
+Compacted topic behaves more like a distributed commit log - upon compaction, only the latest entry for any given key is preserved in the log. Now remember that kafka topics are partitioned. And so are the stream procesesors - or their **processing units**. Each processing consumes a fixed number of partitionsm hence the maximum parallelism is defined by the number of partitions in the underlying datastream. Scaling simply means partitioning the stream more, provided that the partitioner used to create the datastreams is deterministic.  In this case our graphdelta and graphstate have 32 partitions and so has our stream processing jobs tasks. So there is 32 instances of the above diagram deployed, each consuming precisely one partition from both graphdelta and graphstate, which are partitioned by the same scheme.  
+
+### but that requires a lot of memory right ?
+
+Yes and no. It is true that these types of jobs are memory-bound rather than I/O bound like is the case in Hadoop or to a large degree in Spark too. And since kafka serves as the disk storage for the commit log, what we really care about in the stream processing units is the CPU and Memory balance. There is always work to be done to find that balance for each application, but fundamentally it is a good place to be because it promises a true horizontal scalability. Also it turns out that having embedded local store re-opens all the avenues of memory optimisation that is not available with external storage systems. We have tried different embedded databases but at the moment we are experimienting with our own specialised in-memory storage, the behaves similarly to a compacted data stream but is mutable and has a hash index for constant time access. More importantly it doesn't rely on JVM garbage collector but manages the space in respect to the nature of the data stream - it has a hot and cold segments.
+
+![LogHashMap](donut/core/src/main/scala/org/mha/utils/logmap/LogHashMap.png)
+
+Having a precise control over how memory is managed combined with efficient serialisation of the records results in suprisingly small memory footprint than anticipated from the experience with the Spark equivalent. 
+
+Now depending on nature of keys and the data there is a certain optimum size of each processing unit in terms of memory too which again has to be found by operating the system in production. For example, our graph contains dozens of different identifier types some of which are UUID etc. This creates a very large overhead for maintaining the hash table for each local store so we found that having rather large memory allocated to a smaller number of tasks saves some memory but is slower so our optimum is at the moment 32 tasks each with 6Gb direct memory dedicated to the local store. Under a fully caught-up conditions 1.2Gb of those 6 is occupied by the index which is not optimal but we know we will be scaling the size of the input soon where we may have to double this capacity to 12Gb per task which will make the index-to-data ration roughly 1:12 which starts to look better. 
+<hr/>
+So the bottom line of the memory question, is that the state is local to the process, a lot of optimisations can be done which are not possible with external storage, and the option to fully control how much memory is used and how is it managed gives us a direct way to answer questions about resource planning or cost justifications, i.e. "how big window of data do we need to keep all the applications satisfied" or "how much more cluster power and memory do we need if we were to double the input data to the graph".
 
 <a name="configuration">
 ## Configuration
@@ -228,11 +242,8 @@ The reason for the test package is that many dependencies are provided and not a
 2. LocalLaunch - is for debugging and doesn't actually submit the application to yarn and all streaming and processing happens locally
 
 ### TODOs  
-- Show container address
-- Add memory footprint into the ui instead of small h2
-- add metric to bsp how many times it received edges it already saw
 - Edges should not be represented as Map[Vid, EdgeProps] but rather Set[Edge] where Edge object would contain the dest Vid to allow for duplicate connections with different properties 
-- SyncsToGraph could have a for short window memstore for better detection of bad data, robots, etc.  
+- SyncsToGraph could have a small-ish local state for short window memstore for better detection of bad data, robots, etc.  
 
 
 
