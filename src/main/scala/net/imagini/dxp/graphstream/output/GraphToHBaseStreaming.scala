@@ -3,7 +3,8 @@ package net.imagini.dxp.graphstream.output
 import java.io.FileInputStream
 import java.util.Properties
 
-import org.apache.donut.DonutApp
+import io.amient.donut.DonutApp
+
 
 /**
  * Created by mharis on 28/09/15.

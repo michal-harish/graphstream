@@ -1,11 +1,11 @@
 package net.imagini.dxp.graphstream.connectedbsp
 
 import java.nio.ByteBuffer
+import io.amient.donut.memstore.MemStoreLogMap
+import io.amient.utils.ByteUtils
+import io.amient.utils.logmap.ConcurrentLogHashMap
 import kafka.producer.KeyedMessage
 import net.imagini.dxp.common.{Vid, Edge, BSPMessage}
-import org.apache.donut.memstore.MemStoreLogMap
-import org.mha.utils.ByteUtils
-import org.mha.utils.logmap.ConcurrentLogHashMap
 import org.scalatest.{Matchers, FlatSpec}
 
 /**

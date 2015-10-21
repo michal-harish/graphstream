@@ -2,8 +2,9 @@ package net.imagini.dxp.graphstream.debugging
 
 import java.util.Properties
 
+import io.amient.donut.DonutApp
 import net.imagini.dxp.graphstream.connectedbsp.ConnectedBSPProcessingUnit
-import org.apache.donut._
+import io.amient.donut._
 
 /**
  * Created by mharis on 08/10/15.

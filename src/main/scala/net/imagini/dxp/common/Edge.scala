@@ -1,6 +1,6 @@
 package net.imagini.dxp.common
 
-import org.mha.utils.ByteUtils
+import io.amient.utils.ByteUtils
 
 /**
  * Created by mharis on 10/09/15.

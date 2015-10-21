@@ -2,8 +2,8 @@ package net.imagini.dxp.graphstream.debugging
 
 import java.io.FileInputStream
 import java.util.Properties
+import io.amient.donut.KafkaUtils
 import net.imagini.dxp.common.BSPMessage
-import org.apache.donut.KafkaUtils
 
 /**
  * Created by mharis on 22/09/15.

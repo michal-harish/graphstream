@@ -3,9 +3,9 @@ package net.imagini.dxp.graphstream.connectedbsp
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicLong
 
+import io.amient.donut.memstore.MemStore
 import kafka.producer.KeyedMessage
 import net.imagini.dxp.common.{BSPMessage, Edge, Vid}
-import org.apache.donut.memstore.MemStore
 import org.slf4j.LoggerFactory
 
 /**

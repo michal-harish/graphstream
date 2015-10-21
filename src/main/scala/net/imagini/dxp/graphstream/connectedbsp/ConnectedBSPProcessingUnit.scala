@@ -4,14 +4,14 @@ import java.nio.ByteBuffer
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
 
+import io.amient.donut.memstore.MemStoreLogMap
+import io.amient.donut.metrics.{Counter, Ratio, Throughput}
+import io.amient.donut.{DonutAppTask, Fetcher, FetcherBootstrap, FetcherDelta}
+import io.amient.utils.ByteUtils
+import io.amient.utils.logmap.ConcurrentLogHashMap
 import kafka.message.MessageAndOffset
 import kafka.producer.KeyedMessage
 import net.imagini.dxp.common.VidKafkaPartitioner
-import org.apache.donut._
-import org.apache.donut.memstore.MemStoreLogMap
-import org.apache.donut.metrics.{Counter, Ratio, Throughput}
-import org.mha.utils.ByteUtils
-import org.mha.utils.logmap.ConcurrentLogHashMap
 
 /**
  * Created by mharis on 14/09/15.

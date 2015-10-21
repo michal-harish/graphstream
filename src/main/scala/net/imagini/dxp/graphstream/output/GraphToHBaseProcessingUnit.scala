@@ -1,20 +1,19 @@
 package net.imagini.dxp.graphstream.output
 
 import java.io.IOException
-import java.net.URL
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.{Semaphore, ConcurrentHashMap}
+import java.util.concurrent.{ConcurrentHashMap, Semaphore}
 
+import io.amient.donut.metrics.Throughput
+import io.amient.donut.{DonutAppTask, Fetcher, FetcherDelta}
 import kafka.message.MessageAndOffset
 import net.imagini.dxp.common.{BSPMessage, Edge, Vid}
-import org.apache.donut.metrics.Throughput
-import org.apache.donut.{DonutAppTask, Fetcher, FetcherDelta}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hbase.util.Bytes
-import org.apache.hadoop.hbase.{TableName, HBaseConfiguration}
 import org.apache.hadoop.hbase.client._
+import org.apache.hadoop.hbase.util.Bytes
+import org.apache.hadoop.hbase.{HBaseConfiguration, TableName}
 import org.slf4j.LoggerFactory
 
 /**

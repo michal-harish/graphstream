@@ -2,7 +2,9 @@ package net.imagini.dxp.graphstream.connectedbsp
 
 import java.io.FileInputStream
 import java.util.Properties
-import org.apache.donut.DonutApp
+
+import io.amient.donut.DonutApp
+
 
 /**
  * Created by mharis on 22/09/15.

@@ -4,11 +4,11 @@ import java.io.{IOException, FileInputStream}
 import java.nio.ByteBuffer
 import java.util.Properties
 
+import io.amient.donut.KafkaUtils
+import io.amient.utils.ByteUtils
 import kafka.producer.{KeyedMessage, Producer}
 import net.imagini.dxp.common._
 import net.imagini.dxp.graphstream.connectedbsp.ConnectedGraphBSPStreaming
-import org.apache.donut.KafkaUtils
-import org.mha.utils.ByteUtils
 
 import scala.io.Source
 
@@ -160,8 +160,9 @@ class FileToGraph(
 
   private def feedbackLoop: Boolean = {
     val downstreamProgress = kafkaUtils.getGroupProgress(ConnectedGraphBSPStreaming.GROUP_ID, List("graphdelta"))
-    println(s"DOWNSTREAM PROGRESS: ${100 * downstreamProgress} %")
-    downstreamProgress < 0.75
+    val (minimum, average, maximum) = downstreamProgress
+    println(s"DOWNSTREAM PROGRESS: Min = ${100 * minimum} %, Avg = ${100 * average}")
+    minimum < 0.5 || average < 0.75
   }
 
 

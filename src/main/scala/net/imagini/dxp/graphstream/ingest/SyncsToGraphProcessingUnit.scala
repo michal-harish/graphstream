@@ -1,18 +1,17 @@
 package net.imagini.dxp.graphstream.ingest
 
-import java.net.URL
 import java.util
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
 
+import io.amient.donut.metrics.{Counter, Throughput}
+import io.amient.donut.{DonutAppTask, Fetcher, FetcherDelta}
+import io.amient.utils.ByteUtils
 import kafka.message.MessageAndOffset
 import kafka.producer.KeyedMessage
 import net.imagini.common.message.VDNAUserImport
 import net.imagini.common.messaging.serde.VDNAUniversalDeserializer
 import net.imagini.dxp.common._
-import org.apache.donut.metrics.{Counter, Throughput}
-import org.apache.donut.{DonutAppTask, Fetcher, FetcherDelta}
-import org.mha.utils.ByteUtils
 
 /**
  * Created by mharis on 15/09/15.
