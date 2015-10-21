@@ -167,7 +167,7 @@ class FileToGraph(
         val downstreamProgress = kafkaUtils.getGroupProgress(ConnectedGraphBSPStreaming.GROUP_ID, List("graphdelta"))
         val (minimum, average, maximum) = downstreamProgress
         println(s"DOWNSTREAM PROGRESS: Min = ${100 * minimum} %, Avg = ${100 * average}")
-        return minimum < 0.5 || average < 0.75
+        return minimum < 0.75 || average < 0.9
       } catch {
         case e: IOException => {
           numErrors += 1
