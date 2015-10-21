@@ -91,7 +91,7 @@ Compacted topic behaves more like a distributed commit log - upon compaction, on
 
 Yes and no. It is true that these types of jobs are memory-bound rather than I/O bound like is the case in Hadoop or to a large degree in Spark too. And since kafka serves as the disk storage for the commit log, what we really care about in the stream processing units is the CPU and Memory balance. There is always work to be done to find that balance for each application, but fundamentally it is a good place to be because it promises a true horizontal scalability. Also it turns out that having embedded local store re-opens all the avenues of memory optimisation that is not available with external storage systems. We have tried different embedded databases but at the moment we are experimienting with our own specialised in-memory storage, the behaves similarly to a compacted data stream but is mutable and has a hash index for constant time access. More importantly it doesn't rely on JVM garbage collector but manages the space in respect to the nature of the data stream - it has a hot and cold segments.
 
-![LogHashMap](donut/core/src/main/scala/org/mha/utils/logmap/LogHashMap.png)
+![LogHashMap](https://raw.githubusercontent.com/michal-harish/donut/master/core/src/main/scala/org/mha/utils/logmap/LogHashMap.png)
 
 Having a precise control over how memory is managed combined with efficient serialisation of the records results in suprisingly small memory footprint than anticipated from the experience with the Spark equivalent. 
 
