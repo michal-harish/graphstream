@@ -58,6 +58,10 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
     }
   }
 
+  /**
+   * The processor is a separate class for testing purpose. The processing unit provides the
+   * integration with the mssaging infrastructure, the processor is a stateless logic.
+   */
   private val processor = new ConnectedBSPProcessor(minEdgeProbability = 0.75, new MemStoreLogMap(logmap))
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {
