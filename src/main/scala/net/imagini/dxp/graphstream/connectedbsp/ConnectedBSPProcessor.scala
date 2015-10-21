@@ -21,7 +21,7 @@ class ConnectedBSPProcessor(minEdgeProbability: Double, val memstore: MemStore) 
 
   private val log = LoggerFactory.getLogger(classOf[ConnectedBSPProcessor])
 
-  val MAX_ITERATIONS = 2
+  val MAX_ITERATIONS = 3
   private val MAX_EDGES = 99
 
   val bspOverflow = new AtomicLong(0)
