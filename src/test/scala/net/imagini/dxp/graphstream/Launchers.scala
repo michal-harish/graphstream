@@ -2,10 +2,8 @@ package net.imagini.dxp.graphstream
 
 import net.imagini.dxp.graphstream.connectedbsp.ConnectedGraphBSPStreaming
 import net.imagini.dxp.graphstream.debugging.{DebugConnectedBSP, DebugConnectedBSPApplication, GraphStatePrinter}
-import net.imagini.dxp.graphstream.ingest.{SyncsToGraph, SyncsToGraphStreaming}
-import net.imagini.dxp.graphstream.output.{GraphToHBase, GraphToHBaseStreaming}
-import org.apache.donut.KafkaUtils
-
+import net.imagini.dxp.graphstream.ingest.{SyncsToGraphStreaming}
+import net.imagini.dxp.graphstream.output.{GraphToHBaseStreaming}
 
 
 object YARNLaunchConnectedBSP extends App {
@@ -13,11 +11,11 @@ object YARNLaunchConnectedBSP extends App {
 }
 
 object YARNLaunchSyncsToGraph extends App {
-  SyncsToGraph.main(Array(Config.path, "wait"))
+  SyncsToGraphStreaming.main(Array(Config.path, "wait"))
 }
 
 object YARNLaunchGraphToHBase extends App {
-  GraphToHBase.main(Array(Config.path, "wait"))
+  SyncsToGraphStreaming.main(Array(Config.path, "wait"))
 }
 
 /**
@@ -42,26 +40,4 @@ object DebugLocalGraphToHBase extends App {
 
 object DebugGraphDeltaPrinter extends App {
   GraphStatePrinter.main(Array(Config.path, "2"))
-}
-
-object DebugOffsetReport extends App {
-
-  val kafkaUtils = new KafkaUtils(Config)
-
-  val inspect = Map(
-    ("datasync" -> "GraphSyncsStreamingBSP"),
-    ("graphdelta" ->  "GraphStreamingBSP"),
-    ("graphstate" -> "GraphStreamingBSP")
-  )
-  kafkaUtils.getPartitionMap(inspect.keys.toList).foreach { case (topic, numPartitions) => {
-    val consumerGroupId = inspect(topic)
-      for (p <- (0 to numPartitions - 1)) {
-        val consumer = new kafkaUtils.PartitionConsumer(topic, p, consumerGroupId)
-
-        val (earliest, consumed, latest) = (consumer.getEarliestOffset, consumer.getOffset, consumer.getLatestOffset)
-
-        println(s"$topic/$p OFFSET RANGE = ${earliest}:${latest} => ${consumerGroupId} group offset ${consumed} }")
-      }
-    }
-  }
 }

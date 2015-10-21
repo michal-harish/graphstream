@@ -6,6 +6,7 @@ import java.util.Properties
 
 import kafka.producer.{KeyedMessage, Producer}
 import net.imagini.dxp.common._
+import net.imagini.dxp.graphstream.connectedbsp.ConnectedGraphBSPStreaming
 import org.apache.donut.KafkaUtils
 import org.mha.utils.ByteUtils
 
@@ -42,15 +43,22 @@ object FileToGraph extends App {
 
 }
 
-class FileToGraph(config: Properties, val date: String, val mobileIdSpace: String, val probabilityThreshold: Double) {
+class FileToGraph(
+                   config: Properties,
+                   val date: String,
+                   val mobileIdSpace: String,
+                   val probabilityThreshold: Double) {
 
   val kafkaUtils = new KafkaUtils(config)
   val decoder = new CWDecoder(date, mobileIdSpace, probabilityThreshold)
   var producer: Producer[Array[Byte], Array[Byte]] = null
+  var checkpointNs = 0L
+  val checkpointIntervalNs = 60L * 1000000000
 
   def processStdIn: Unit = {
 
-    println(s"Preparing CWDecoder for DATE = ${date}, mobile space = ${mobileIdSpace}, probability >= ${probabilityThreshold}\n")
+    println(s"Preparing CWDecoder for DATE = ${date}, " +
+      s"mobile space = ${mobileIdSpace}, probability >= ${probabilityThreshold}\n")
 
     var counterIgnored = 0L
     var counterInvalid = 0L
@@ -59,24 +67,25 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
     try {
       for (ln <- Source.stdin.getLines) {
         try {
-          if (ln == null) {
-            return
-          } else processLine(ln) match {
-            case None => {
-              counterIgnored += 1L
-              if (counterIgnored % 1000000 == 0) {
-                println(s"IGNORED LINES: ${counterIgnored} ...")
-              }
-            }
+          if (ln != null) processLine(ln) match {
+            case None => counterIgnored += 1L
             case Some(couple) => {
               produce(couple(0))
               counterProduced += 1L
               produce(couple(1))
               counterProduced += 1L
-              if (counterProduced % 1000000 <= 1) {
-                println(s"PRODUCED MESSAGES: ${counterProduced} ...")
-              }
             }
+          }
+          val ns = System.nanoTime
+          if (checkpointNs + checkpointIntervalNs < ns) {
+            println(s"IGNORED LINES: ${counterIgnored} ...")
+            println(s"PRODUCED MESSAGES: ${counterProduced} ...")
+            while (feedbackLoop) {
+              val msToSleep = checkpointIntervalNs * 2 / 1000000
+              println(s"FEEDBACK LOOP ACTIVATED, WAITING ${msToSleep / 1000} SECONDS")
+              Thread.sleep(msToSleep)
+            }
+            checkpointNs = ns
           }
         } catch {
           case e: IllegalArgumentException => counterInvalid += 1L
@@ -134,7 +143,8 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
       if (producer == null) {
         producer = kafkaUtils.snappyAsyncProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 500)
       }
-      producer.send(new KeyedMessage("graphdelta", ByteUtils.bufToArray(message._1), ByteUtils.bufToArray(message._2)))
+      producer.send(new KeyedMessage("graphdelta",
+        ByteUtils.bufToArray(message._1), ByteUtils.bufToArray(message._2)))
       return
     } catch {
       case e: IOException => {
@@ -146,6 +156,12 @@ class FileToGraph(config: Properties, val date: String, val mobileIdSpace: Strin
         }
       }
     }
+  }
+
+  private def feedbackLoop: Boolean = {
+    val downstreamProgress = kafkaUtils.getGroupProgress(ConnectedGraphBSPStreaming.GROUP_ID, List("graphdelta"))
+    println(s"DOWNSTREAM PROGRESS: ${100 * downstreamProgress} %")
+    downstreamProgress < 0.75
   }
 
 

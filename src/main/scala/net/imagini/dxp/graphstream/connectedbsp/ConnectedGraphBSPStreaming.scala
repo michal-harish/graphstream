@@ -13,6 +13,7 @@ import org.apache.donut.DonutApp
  */
 
 object ConnectedGraphBSPStreaming {
+  val GROUP_ID = "GraphStreamingBSP"
   def main(args: Array[String]) = {
     val config = new Properties
     config.load(new FileInputStream(args(0)))
@@ -37,7 +38,7 @@ object ConnectedGraphBSPStreaming {
 class ConnectedGraphBSPStreaming(config: Properties) extends DonutApp[ConnectedBSPProcessingUnit]({
 
   // Memory Footprint (32 partitions in both topics) = 200g + (32 x 1g overhead) + 1g= 233 Gb
-  config.setProperty("group.id", "GraphStreamingBSP")
+  config.setProperty("group.id", ConnectedGraphBSPStreaming.GROUP_ID)
   config.setProperty("topics", "graphdelta,graphstate")
   config.setProperty("cogroup", "true")
   config.setProperty("direct.memory.mb",      "200000")
