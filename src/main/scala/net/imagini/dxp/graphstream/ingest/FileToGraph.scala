@@ -54,6 +54,7 @@ class FileToGraph(
   var producer: Producer[Array[Byte], Array[Byte]] = null
   var checkpointNs = 0L
   val checkpointIntervalNs = 60L * 1000000000
+  val msToBackOff = checkpointIntervalNs * 2 / 1000000
 
   def processStdIn: Unit = {
 
@@ -81,9 +82,8 @@ class FileToGraph(
             println(s"IGNORED LINES: ${counterIgnored} ...")
             println(s"PRODUCED MESSAGES: ${counterProduced} ...")
             while (feedbackLoop) {
-              val msToSleep = checkpointIntervalNs * 2 / 1000000
-              println(s"FEEDBACK LOOP ACTIVATED, WAITING ${msToSleep / 1000} SECONDS")
-              Thread.sleep(msToSleep)
+              println(s"FEEDBACK LOOP ACTIVATED, WAITING ${msToBackOff / 1000} SECONDS")
+              Thread.sleep(msToBackOff)
             }
             checkpointNs = ns
           }
@@ -159,10 +159,25 @@ class FileToGraph(
   }
 
   private def feedbackLoop: Boolean = {
-    val downstreamProgress = kafkaUtils.getGroupProgress(ConnectedGraphBSPStreaming.GROUP_ID, List("graphdelta"))
-    val (minimum, average, maximum) = downstreamProgress
-    println(s"DOWNSTREAM PROGRESS: Min = ${100 * minimum} %, Avg = ${100 * average}")
-    minimum < 0.5 || average < 0.75
+    var numErrors = 0
+    var error: Throwable = null
+    while (numErrors < 5) {
+      try {
+
+        val downstreamProgress = kafkaUtils.getGroupProgress(ConnectedGraphBSPStreaming.GROUP_ID, List("graphdelta"))
+        val (minimum, average, maximum) = downstreamProgress
+        println(s"DOWNSTREAM PROGRESS: Min = ${100 * minimum} %, Avg = ${100 * average}")
+        return minimum < 0.5 || average < 0.75
+      } catch {
+        case e: IOException => {
+          numErrors += 1
+          error = e
+          System.err.println(e.getMessage)
+          Thread.sleep(msToBackOff)
+        }
+      }
+    }
+    throw error
   }
 
 
