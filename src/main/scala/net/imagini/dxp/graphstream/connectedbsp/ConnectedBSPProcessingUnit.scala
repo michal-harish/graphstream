@@ -166,8 +166,8 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
     })
   }
 
-  private val deltaProducer = kafkaUtils.snappyAsyncProducer[VidKafkaPartitioner](numAcks = -1, batchSize = 500)
-  private val stateProducer = kafkaUtils.compactAsyncProducer[VidKafkaPartitioner](numAcks = -1, batchSize = 500)
+  private val deltaProducer = kafkaUtils.snappyAsyncProducer[VidKafkaPartitioner](numAcks = -1, batchSize = 1000, queueSize = 15000)
+  private val stateProducer = kafkaUtils.compactAsyncProducer[VidKafkaPartitioner](numAcks = -1, batchSize = 800, queueSize = 10000)
 
   override def onShutdown: Unit = {
     deltaProducer.close
