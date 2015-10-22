@@ -14,6 +14,7 @@ object BSPMessage {
 
   def decodeKey(key: ByteBuffer): Vid = Vid(ByteUtils.bufToArray(key))
 
+  //TODO use java.util.Map
   def encodePayload(payload: (Byte, Map[Vid, Edge])): ByteBuffer = {
     val (iter, edges) = payload
     val len = edges.foldLeft(1 + 2)((l, item) => l + 8 + 1 + item._1.bytes.length + 4)
@@ -31,6 +32,7 @@ object BSPMessage {
     result
   }
 
+  //TODO use java.util.Map
   def decodePayload(payload: ByteBuffer): (Byte, Map[Vid, Edge]) = {
     if (payload == null) {
       null
@@ -38,7 +40,9 @@ object BSPMessage {
       val p = payload.position
       val iter = payload.get
       val size = payload.getShort.toInt
-      val result = (iter, (for (i <- (1 to size)) yield {
+      var i = 1
+      val result = Map.newBuilder[Vid, Edge]
+      while (i <= size) {
         val ts = payload.getLong
         val vidBytes = new Array[Byte](payload.get())
         payload.get(vidBytes)
@@ -46,10 +50,11 @@ object BSPMessage {
         val edgeBytes = new Array[Byte](4)
         payload.get(edgeBytes)
         val edge = Edge.applyVersion(edgeBytes, ts)
-        (vid, edge)
-      }).toMap)
+        result += ((vid, edge))
+        i += 1
+      }
       payload.position(p)
-      result
+      (iter, result.result)
     }
   }
 

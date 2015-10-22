@@ -4,7 +4,6 @@ import java.util.Properties
 
 import io.amient.donut.DonutApp
 import net.imagini.dxp.graphstream.connectedbsp.ConnectedBSPProcessingUnit
-import io.amient.donut._
 
 /**
  * Created by mharis on 08/10/15.

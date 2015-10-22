@@ -4,10 +4,10 @@ import java.nio.ByteBuffer
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
 
-import io.amient.donut.memstore.MemStoreLogMap
+import io.amient.donut.memstore.{MemStoreServer, MemStoreLogMap}
 import io.amient.donut.metrics.{Counter, Ratio, Throughput}
 import io.amient.donut.{DonutAppTask, Fetcher, FetcherBootstrap, FetcherDelta}
-import io.amient.utils.ByteUtils
+import io.amient.utils.{AddressUtils, ByteUtils}
 import io.amient.utils.logmap.ConcurrentLogHashMap
 import kafka.message.MessageAndOffset
 import kafka.producer.KeyedMessage
@@ -40,7 +40,7 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
     maxMemoryMemstoreMb,
     segmentSizeMb = 100,
     compressMinBlockSize = 131070,
-    indexLoadFactor = 0.87) {
+    indexLoadFactor = 0.7) {
     /**
      * When the in-memory state overflows we also create a tombstone in the compacted state topic
      * Since the producers must be expected to be asynchronous we have to make a copy of the key
@@ -55,11 +55,19 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
     }
   }
 
+  private val memstore = new MemStoreLogMap(logmap)
+
+//  private val server = new MemStoreServer(memstore)
+//
+//  server.start
+//
+//  ui.updateStatus(partition, "memstore address", (AddressUtils.getLANHost() + ":" + server.getListeningPort))
+
   /**
    * The processor is a separate class for testing purpose. The processing unit provides the
    * integration with the mssaging infrastructure, the processor is a stateless logic.
    */
-  private val processor = new ConnectedBSPProcessor(minEdgeProbability = 0.75, new MemStoreLogMap(logmap))
+  private val processor = new ConnectedBSPProcessor(minEdgeProbability = 0.75, memstore)
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {
     topic match {

@@ -82,7 +82,6 @@ class FileToGraph(
             println(s"IGNORED LINES: ${counterIgnored} ...")
             println(s"PRODUCED MESSAGES: ${counterProduced} ...")
             while (feedbackLoop) {
-              println(s"FEEDBACK LOOP ACTIVATED, WAITING ${msToBackOff / 1000} SECONDS")
               Thread.sleep(msToBackOff)
             }
             checkpointNs = ns
@@ -163,11 +162,13 @@ class FileToGraph(
     var error: Throwable = null
     while (numErrors < 5) {
       try {
-
         val downstreamProgress = kafkaUtils.getGroupProgress(ConnectedGraphBSPStreaming.GROUP_ID, List("graphdelta"))
         val (minimum, average, maximum) = downstreamProgress
-        println(s"DOWNSTREAM PROGRESS: Min = ${100 * minimum} %, Avg = ${100 * average}")
-        return minimum < 0.75 || average < 0.9
+
+        val activate = minimum < 0.85 || average < 0.95
+        println(s"DOWNSTREAM PROGRESS: Min = ${100 * minimum}%, Avg = ${100 * average}%" +
+          (if (activate) s" WAITING ${msToBackOff / 1000} SECONDS.." else ""))
+        return activate
       } catch {
         case e: IOException => {
           numErrors += 1

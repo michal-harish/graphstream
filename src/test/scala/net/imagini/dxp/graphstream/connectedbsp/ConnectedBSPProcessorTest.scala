@@ -123,7 +123,7 @@ class ConnectedBSPProcessorTest extends FlatSpec with Matchers {
   = (BSPMessage.encodeKey(key), BSPMessage.encodePayload(payload))
 
   private def getState: Map[Vid, Map[Vid, Edge]] = {
-    processor.memstore.iterator.map { case (keyBytes, valBytes) =>
+    processor.memstore.map { case (keyBytes, valBytes) =>
       BSPMessage.decodeKey(keyBytes) -> BSPMessage.decodePayload(valBytes)._2
     }.toMap
   }
