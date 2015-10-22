@@ -32,7 +32,7 @@ class ConnectedBSPProcessor(minEdgeProbability: Double, val memstore: MemStore) 
       memstore.put(msgKey, payload)
     } catch {
       case e: IllegalArgumentException => throw e
-      case e: Throwable => throw new IllegalStateException("Invalid Key ByteBuffer " + msgKey, e)
+      case e: Throwable => throw new IllegalArgumentException("Invalid Key ByteBuffer " + msgKey, e)
     }
   }
 

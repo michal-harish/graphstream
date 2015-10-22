@@ -11,7 +11,7 @@ import io.amient.utils.ByteUtils
 import io.amient.utils.logmap.ConcurrentLogHashMap
 import kafka.message.MessageAndOffset
 import kafka.producer.KeyedMessage
-import net.imagini.dxp.common.VidKafkaPartitioner
+import net.imagini.dxp.common.{BSPMessage, VidKafkaPartitioner}
 
 /**
  * Created by mharis on 14/09/15.
@@ -47,9 +47,6 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
      * buffer
      */
     override def onEvictEntry(key: ByteBuffer): Unit = {
-      if (key == null || key.remaining <= 0) {
-        throw new IllegalArgumentException("Key cannot be null or empty")
-      }
       evictions.incrementAndGet
       produce(List(
         new KeyedMessage("graphstate", key, null.asInstanceOf[ByteBuffer]),
@@ -76,9 +73,9 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
               case e: IllegalArgumentException => {
                 if (debug) e.printStackTrace
                 stateInvalid.incrementAndGet
-                produce(List(
-                  new KeyedMessage("graphstate", messageAndOffset.message.key, null)
-                ))
+                if (messageAndOffset.message.key != null) {
+                  stateProducer.send(new KeyedMessage("graphstate", ByteUtils.bufToArray(messageAndOffset.message.key), null))
+                }
               }
             }
           }
@@ -139,15 +136,22 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
    */
   def produce(outputMessages: List[MESSAGE]): Unit = {
     outputMessages.foreach(message => {
+      if (message.key == null || message.key.remaining <= 0) {
+        throw new IllegalArgumentException(s"Key cannot be null or empty: ${message.key}, topic `${message.topic}` " +
+          s", payload = ${BSPMessage.decodePayload(message.message)}")
+      }
+
+      val byteMessage = new KeyedMessage[Array[Byte], Array[Byte]](
+        message.topic, ByteUtils.bufToArray(message.key), ByteUtils.bufToArray(message.message))
+
       message.topic match {
         case "graphdelta" => {
-          if (!debug) deltaProducer.send(new KeyedMessage[Array[Byte], Array[Byte]](
-            "graphdelta", ByteUtils.bufToArray(message.key), ByteUtils.bufToArray(message.message)))
+          if (!debug) deltaProducer.send(byteMessage)
           deltaOutThroughput.incrementAndGet
           deltaOut.incrementAndGet
         }
         case "graphstate" => {
-          if (!debug) stateProducer.send(message)
+          if (!debug) stateProducer.send(byteMessage)
           stateOut.incrementAndGet
         }
       }
