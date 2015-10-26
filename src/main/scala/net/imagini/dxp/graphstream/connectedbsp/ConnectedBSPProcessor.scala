@@ -42,10 +42,6 @@ class ConnectedBSPProcessor(minEdgeProbability: Double, val memstore: MemStore) 
    * @return list of messages to produce
    */
   def processDeltaInput(key: ByteBuffer, payload: ByteBuffer): List[MESSAGE] = {
-    if (payload == null) {
-      //eviction message was generated here, no need to process more
-      return List()
-    }
     val output = List.newBuilder[MESSAGE]
     memstore.get(key, b => b) match {
       case None => {

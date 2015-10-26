@@ -93,13 +93,15 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
       case "graphdelta" => new FetcherDelta(this, topic, partition, groupId) {
         override def handleMessage(envelope: MessageAndOffset): Unit = {
           try {
-            val outputMessages = processor.processDeltaInput(envelope.message.key, envelope.message.payload)
-            deltaIn.incrementAndGet
-            deltaInThroughput.incrementAndGet
-            if (outputMessages.size == 0) {
-              deltaWaste.incrementAndGet
-            } else {
-              produce(outputMessages)
+            if (envelope.message.payload != null) {
+              val outputMessages = processor.processDeltaInput(envelope.message.key, envelope.message.payload)
+              deltaIn.incrementAndGet
+              deltaInThroughput.incrementAndGet
+              if (outputMessages.size == 0) {
+                deltaWaste.incrementAndGet
+              } else {
+                produce(outputMessages)
+              }
             }
           } catch {
             case e: IllegalArgumentException => {
