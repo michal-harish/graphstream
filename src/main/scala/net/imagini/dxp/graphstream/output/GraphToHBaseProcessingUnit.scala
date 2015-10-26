@@ -42,7 +42,7 @@ class GraphToHBaseProcessingUnit(config: Properties, args: Array[String]) extend
 
   private val compactionSemaphore = new Semaphore(numFetchers)
 
-  private val compactedQueue = new ConcurrentHashMap[Vid, Map[Vid, Edge]]
+  private val compactedQueue = new ConcurrentHashMap[Vid, java.util.Map[Vid, Edge]]
 
   private val deltaCounter = new AtomicLong(0)
 
@@ -90,16 +90,14 @@ class GraphToHBaseProcessingUnit(config: Properties, args: Array[String]) extend
               loaderThread.start
             }
             if (payload == null) {
-              compactedQueue.put(key, Map[Vid, Edge]())
+              compactedQueue.put(key, java.util.Collections.emptyMap[Vid, Edge])
             } else {
               val addedEdges = BSPMessage.decodePayload(payload)._2
               if (!compactedQueue.containsKey(key)) {
                 compactedQueue.put(key, addedEdges)
               } else compactedQueue.get(key) match {
                 case previousEdges if (previousEdges.size == 0) => compactedQueue.put(key, addedEdges)
-                case previousEdges => {
-                  compactedQueue.put(key, previousEdges ++ addedEdges)
-                }
+                case previousEdges => previousEdges.putAll(addedEdges)
               }
             }
           } finally {
@@ -139,7 +137,11 @@ class GraphToHBaseProcessingUnit(config: Properties, args: Array[String]) extend
                     delete = new Delete(key.bytes)
                     delete.addFamily(Bytes.toBytes("N"))
                   } else {
-                    edges.foreach { case (destVid, destEdge) => {
+                    val it = edges.entrySet.iterator
+                    while (it.hasNext) {
+                      val i = it.next
+                      val destVid = i.getKey
+                      val destEdge = i.getValue
                       if (destEdge.probability == 0) {
                         if (delete == null) {
                           delete = new Delete(key.bytes)
@@ -151,7 +153,6 @@ class GraphToHBaseProcessingUnit(config: Properties, args: Array[String]) extend
                         }
                         put.addColumn(Bytes.toBytes("N"), destVid.bytes, destEdge.ts, destEdge.bytes)
                       }
-                    }
                     }
                   }
                   if (delete != null && !delete.isEmpty) {

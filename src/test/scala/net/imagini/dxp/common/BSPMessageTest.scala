@@ -14,7 +14,9 @@ class BSPMessageTest extends FlatSpec with Matchers {
     val k = Vid("vdna", "ffffffff-ffff-ffff-ffff-ffffffffffff")
     BSPMessage.decodeKey(BSPMessage.encodeKey(k)) should be(k)
 
-    val edges = Map(Vid("a", "1") -> Edge("AAT", 1.0, 1000L))
+    val edges = new java.util.HashMap[Vid, Edge] {
+      put(Vid("a", "1"), Edge("AAT", 1.0, 1000L))
+    }
     val bytes = BSPMessage.encodePayload((5, edges)).array
 
     bytes.map(_ & 0xff) should be (Seq(

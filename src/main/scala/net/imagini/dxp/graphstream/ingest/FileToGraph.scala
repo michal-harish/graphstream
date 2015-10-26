@@ -114,7 +114,7 @@ class FileToGraph(
     while (true) try {
       produce((
         BSPMessage.encodeKey(pair._1),
-        BSPMessage.encodePayload((1, Map(pair._2)))))
+        BSPMessage.encodePayload(1, pair._2)))
       return
     } catch {
       case e: IOException => {
@@ -165,7 +165,7 @@ class FileToGraph(
         val downstreamProgress = kafkaUtils.getGroupProgress(ConnectedGraphBSPStreaming.GROUP_ID, List("graphdelta"))
         val (minimum, average, maximum) = downstreamProgress
 
-        val activate = minimum < 0.85 || average < 0.95
+        val activate = minimum < 0.5 || average < 0.95
         println(s"DOWNSTREAM PROGRESS: Min = ${100 * minimum}%, Avg = ${100 * average}%" +
           (if (activate) s" WAITING ${msToBackOff / 1000} SECONDS.." else ""))
         return activate

@@ -74,7 +74,7 @@ object Edge extends java.io.Serializable {
 
   def applyVersion(bytes: Array[Byte], ts: Long): Edge = {
     if (bytes.length == 4 && bytes(0) == CURRENT_VERSION) {
-      val vendorCodeParsed: Short = (((bytes(2).toShort & 0xff) << 8) + ((bytes(3).toShort & 0xff) << 0)).toShort
+      val vendorCodeParsed: Short = (((bytes(2) & 0xff) << 8) + ((bytes(3) & 0xff) << 0)).toShort
       if (vendors.contains(vendorCodeParsed)) {
         new Edge(bytes, vendorCodeParsed, ts)
       } else {

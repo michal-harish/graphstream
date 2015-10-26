@@ -46,57 +46,67 @@ class ConnectedBSPProcessor(minEdgeProbability: Double, val memstore: MemStore) 
       //eviction message was generated here, no need to process more
       return List()
     }
-    try {
-      val output = List.newBuilder[MESSAGE]
-      memstore.get(key, b => b) match {
-        case None => {
-          bspMiss.incrementAndGet
+    val output = List.newBuilder[MESSAGE]
+    memstore.get(key, b => b) match {
+      case None => {
+        bspMiss.incrementAndGet
+        memstore.put(key, payload)
+        output += new KeyedMessage("graphstate", key, payload)
+      }
+      case Some(null) => bspOverflow.incrementAndGet
+
+      case Some(serializedState) => {
+        val (iteration, inputEdges) = BSPMessage.decodePayload(payload)
+        val state = BSPMessage.decodePayload(serializedState)._2
+        var evicted = false
+
+        //remove evicted from the state
+        val it0 = inputEdges.entrySet.iterator
+        while (it0.hasNext) {
+          val i = it0.next
+          val ik = i.getKey
+          val iv = i.getValue
+          if (iv.probability == 0) {
+            state.remove(ik)
+            evicted = true
+          }
+        }
+
+        //remove existing from the input
+        val it1 = state.entrySet.iterator
+        while (it1.hasNext) {
+          val e = it1.next
+          val vid = e.getKey
+          val ee = e.getValue
+          val i = inputEdges.get(vid)
+          if (i != null && (i.probability == 0 || i.probability <= ee.probability)) {
+            inputEdges.remove(vid)
+          }
+        }
+
+        if (inputEdges.size > MAX_EDGES) {
+          //evict offending key and remove all the edges pointing to it
+          val nullPayload = null.asInstanceOf[ByteBuffer]
+          memstore.put(key, nullPayload)
+          output += new KeyedMessage("graphdelta", key, nullPayload)
+          output += new KeyedMessage("graphstate", key, nullPayload)
+          val evictDest = BSPMessage.decodeKey(key)
+          val evictProps = Edge(Edge.VENDOR_CODE_UNKNOWN, 0.0, System.currentTimeMillis)
+          output ++= propagateEdge(iteration, evictDest, evictProps, state)
+        } else if (inputEdges.size > 0 || evicted) {
+          if (iteration < MAX_ITERATIONS && inputEdges.size > 0) {
+            output ++= propagateEdges(iteration, inputEdges, state)
+            output ++= propagateEdges(iteration, state, inputEdges)
+          }
+          state.putAll(inputEdges)
+          val payload = BSPMessage.encodePayload((iteration, state))
           memstore.put(key, payload)
           output += new KeyedMessage("graphstate", key, payload)
         }
-        case Some(null) => bspOverflow.incrementAndGet
-
-        case Some(previousState) => {
-          val (iteration, inputEdges) = BSPMessage.decodePayload(payload)
-          val existingEdges = BSPMessage.decodePayload(previousState)._2
-
-          val evictedEdges = inputEdges.filter {
-            case (inDest, inProps) => inProps.probability == 0 && existingEdges.contains(inDest)
-          }.map(_._1)
-
-          val additionalEdges = inputEdges.filter {
-            case (inDest, inProps) => inProps.probability > 0 && !existingEdges.exists {
-              case (exDest, exProps) => exDest == inDest && exProps.probability >= inProps.probability
-            }
-          }
-
-          val newState = existingEdges ++ additionalEdges -- evictedEdges
-          if (newState.size > MAX_EDGES) {
-            //evict offending key and remove all the edges pointing to it
-            val nullPayload = null.asInstanceOf[ByteBuffer]
-            memstore.put(key, nullPayload)
-            output += new KeyedMessage("graphdelta", key, nullPayload)
-            output += new KeyedMessage("graphstate", key, nullPayload)
-            val evictDest = BSPMessage.decodeKey(key)
-            val evictEdge = Edge(Edge.VENDOR_CODE_UNKNOWN, 0.0, System.currentTimeMillis)
-            output ++= propagateEdges(iteration, Map(evictDest -> evictEdge), existingEdges)
-          } else if (additionalEdges.size > 0 || evictedEdges.size > 0) {
-            if (iteration < MAX_ITERATIONS && additionalEdges.size > 0) {
-              output ++= propagateEdges(iteration, newState, existingEdges)
-              output ++= propagateEdges(iteration, existingEdges, newState)
-            }
-            val payload = BSPMessage.encodePayload((iteration, newState))
-            memstore.put(key, payload)
-            output += new KeyedMessage("graphstate", key, payload)
-          }
-        }
       }
-      val outputMessages = output.result
-      outputMessages
-    } catch {
-      case e: IllegalArgumentException => throw e
-      case e: Throwable => throw new IllegalStateException("Invalid Key ByteBuffer " + key, e)
     }
+    val outputMessages = output.result
+    outputMessages
   }
 
   /**
@@ -105,20 +115,32 @@ class ConnectedBSPProcessor(minEdgeProbability: Double, val memstore: MemStore) 
    * @param dest
    * @return
    */
-  private def propagateEdges(iteration: Int, edges: Map[Vid, Edge], dest: Map[Vid, Edge]): Iterable[MESSAGE] = {
-    dest.flatMap { case (destVid, destEdge) => {
-      val propagateEdges = edges.mapValues(edge => {
-        Edge(edge.vendorCode, edge.probability * destEdge.probability, math.max(destEdge.ts, edge.ts))
-      }).filter { case (vid, props) => vid != destVid && (props.probability == 0 || props.probability >= minEdgeProbability) }
-      if (propagateEdges.size == 0) {
-        Seq()
-      } else {
-        val destKey = BSPMessage.encodeKey(destVid)
-        val payload = BSPMessage.encodePayload(((iteration + 1).toByte, propagateEdges))
-        Seq(new KeyedMessage("graphdelta", destKey, payload))
+  private def propagateEdges(iteration: Int, edges: java.util.Map[Vid, Edge], dest: java.util.Map[Vid, Edge]): Iterable[MESSAGE] = {
+    val result = List.newBuilder[MESSAGE]
+    val it = edges.entrySet.iterator
+    while (it.hasNext) {
+      val i = it.next
+      result ++= propagateEdge(iteration, i.getKey, i.getValue, dest)
+    }
+    result.result
+  }
+
+  private def propagateEdge(iteration: Int, vid: Vid, props: Edge, dest: java.util.Map[Vid, Edge]): Iterable[MESSAGE] = {
+    val it = dest.entrySet.iterator
+    val result = List.newBuilder[MESSAGE]
+    while (it.hasNext) {
+      val d = it.next
+      val propagateVid = d.getKey
+      if (propagateVid != vid) {
+        val destEdge = d.getValue
+        val propagateEdge = Edge(props.vendorCode, props.probability * destEdge.probability, math.max(destEdge.ts, props.ts))
+        if (propagateEdge.probability == 0 || propagateEdge.probability >= minEdgeProbability) {
+          val payload = BSPMessage.encodePayload((iteration + 1).toByte, (vid, propagateEdge))
+          result += new KeyedMessage("graphdelta", BSPMessage.encodeKey(propagateVid), payload)
+        }
       }
     }
-    }
+    result.result
   }
 
 }

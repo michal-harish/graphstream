@@ -87,11 +87,11 @@ class SyncsToGraphProcessingUnit(config: Properties, args: Array[String]) extend
         new KeyedMessage(
           "graphdelta",
           ByteUtils.bufToArray(BSPMessage.encodeKey(vdnaId)),
-          ByteUtils.bufToArray(BSPMessage.encodePayload((1, Map(partnerId -> edge))))),
+          ByteUtils.bufToArray(BSPMessage.encodePayload(1, partnerId -> edge))),
         new KeyedMessage(
           "graphdelta",
             ByteUtils.bufToArray(BSPMessage.encodeKey(partnerId)),
-            ByteUtils.bufToArray(BSPMessage.encodePayload((1, Map(vdnaId -> edge)))))
+            ByteUtils.bufToArray(BSPMessage.encodePayload(1, vdnaId -> edge)))
       )
       counterProduced.addAndGet(2L)
     } catch {

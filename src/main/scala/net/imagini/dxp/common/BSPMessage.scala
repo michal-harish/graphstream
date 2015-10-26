@@ -1,7 +1,6 @@
 package net.imagini.dxp.common
 
 import java.nio.ByteBuffer
-import java.util
 
 import io.amient.utils.ByteUtils
 
@@ -14,26 +13,44 @@ object BSPMessage {
 
   def decodeKey(key: ByteBuffer): Vid = Vid(ByteUtils.bufToArray(key))
 
-  //TODO use java.util.Map
-  def encodePayload(payload: (Byte, Map[Vid, Edge])): ByteBuffer = {
+  def encodePayload(payload: (Byte, java.util.Map[Vid, Edge])): ByteBuffer = {
     val (iter, edges) = payload
-    val len = edges.foldLeft(1 + 2)((l, item) => l + 8 + 1 + item._1.bytes.length + 4)
+    var len = 3
+    val it = edges.entrySet.iterator
+    while (it.hasNext) {
+      len += (8 + 1 + it.next.getKey.bytes.length + 4)
+    }
     val result = ByteBuffer.allocate(len)
     result.put(iter)
     result.putShort(edges.size.toShort)
-    edges.foreach { case (vid, edge) => {
+    val it2 = edges.entrySet.iterator
+    while (it2.hasNext) {
+      val i = it2.next
+      val vid = i.getKey
+      val edge = i.getValue
       result.putLong(edge.ts)
       result.put(vid.bytes.length.toByte)
       result.put(vid.bytes)
       result.put(edge.bytes)
     }
-    }
     result.flip
     result
   }
 
-  //TODO use java.util.Map
-  def decodePayload(payload: ByteBuffer): (Byte, Map[Vid, Edge]) = {
+  def encodePayload(iter: Byte, edge: (Vid, Edge)): ByteBuffer = {
+    val len = 3 + (8 + 1 + edge._1.bytes.length + 4)
+    val result = ByteBuffer.allocate(len)
+    result.put(iter)
+    result.putShort(1)
+    result.putLong(edge._2.ts)
+    result.put(edge._1.bytes.length.toByte)
+    result.put(edge._1.bytes)
+    result.put(edge._2.bytes)
+    result.flip
+    result
+  }
+
+  def decodePayload(payload: ByteBuffer): (Byte, java.util.Map[Vid, Edge]) = {
     if (payload == null) {
       null
     } else {
@@ -41,7 +58,7 @@ object BSPMessage {
       val iter = payload.get
       val size = payload.getShort.toInt
       var i = 1
-      val result = Map.newBuilder[Vid, Edge]
+      val result = new java.util.HashMap[Vid, Edge]
       while (i <= size) {
         val ts = payload.getLong
         val vidBytes = new Array[Byte](payload.get())
@@ -50,11 +67,11 @@ object BSPMessage {
         val edgeBytes = new Array[Byte](4)
         payload.get(edgeBytes)
         val edge = Edge.applyVersion(edgeBytes, ts)
-        result += ((vid, edge))
+        result.put(vid, edge)
         i += 1
       }
       payload.position(p)
-      (iter, result.result)
+      (iter, result)
     }
   }
 

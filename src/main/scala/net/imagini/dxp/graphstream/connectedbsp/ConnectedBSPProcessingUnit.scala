@@ -4,10 +4,10 @@ import java.nio.ByteBuffer
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
 
-import io.amient.donut.memstore.{MemStoreServer, MemStoreLogMap}
+import io.amient.donut.memstore.MemStoreLogMap
 import io.amient.donut.metrics.{Counter, Ratio, Throughput}
 import io.amient.donut.{DonutAppTask, Fetcher, FetcherBootstrap, FetcherDelta}
-import io.amient.utils.{AddressUtils, ByteUtils}
+import io.amient.utils.ByteUtils
 import io.amient.utils.logmap.ConcurrentLogHashMap
 import kafka.message.MessageAndOffset
 import kafka.producer.KeyedMessage
@@ -122,7 +122,7 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
 
     ui.updateMetric(partition, "memstore bsp-miss", classOf[Counter], processor.bspMiss.get)
     ui.updateMetric(partition, "memstore bsp-over", classOf[Counter], processor.bspOverflow.get)
-    ui.updateMetric(partition, "memstore evictions/sec", classOf[Throughput], evictions.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "memstore evictions", classOf[Throughput], evictions.get)
     ui.updateMetric(partition, "memstore memory.mb", classOf[Ratio],
       value = s"${processor.memstore.sizeInBytes / 1024 / 1024}/${maxMemoryMemstoreMb}",
       hint = s"${processor.memstore.stats(true).mkString("\n")}")
