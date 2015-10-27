@@ -3,21 +3,21 @@ package net.imagini.dxp.graphstream
 import io.amient.donut.memstore.MemStoreClient
 import net.imagini.dxp.common.BSPMessage
 import net.imagini.dxp.graphstream.connectedbsp.ConnectedGraphBSPStreaming
-import net.imagini.dxp.graphstream.debugging.{DebugConnectedBSP, DebugConnectedBSPApplication, GraphStatePrinter}
+import net.imagini.dxp.graphstream.debugging.{DebugConnectedBSP, DebugConnectedBSPApplication}
 import net.imagini.dxp.graphstream.ingest.{SyncsToGraphStreaming}
 import net.imagini.dxp.graphstream.output.{GraphToHBaseStreaming}
 
 
 object YARNLaunchConnectedBSP extends App {
-  ConnectedGraphBSPStreaming.main(Array(Config.path, "wait"))
+  ConnectedGraphBSPStreaming.main(Array(ConfigMain.path, "wait"))
 }
 
 object YARNLaunchSyncsToGraph extends App {
-  SyncsToGraphStreaming.main(Array(Config.path, "wait"))
+  SyncsToGraphStreaming.main(Array(ConfigBridge.path, "wait"))
 }
 
 object YARNLaunchGraphToHBase extends App {
-  GraphToHBaseStreaming.main(Array(Config.path, "wait"))
+  GraphToHBaseStreaming.main(Array(ConfigMain.path, "wait"))
 }
 
 /**
@@ -25,11 +25,11 @@ object YARNLaunchGraphToHBase extends App {
  */
 
 object DebugLocalSyncsToGraph extends App {
-  new SyncsToGraphStreaming(Config).runLocally()
+  new SyncsToGraphStreaming(ConfigBridge).runLocally()
 }
 
 object DebugLocalConnectedBSP extends App {
-  new DebugConnectedBSPApplication(Config).runLocally(debugOnePartition = 1)
+  new DebugConnectedBSPApplication(ConfigMain).runLocally(debugOnePartition = 1)
 }
 
 object DebugMemStoreServerClient extends App {
@@ -62,13 +62,9 @@ object DebugMemStoreServerClient extends App {
 }
 
 object DebugYARNConnectedBSP extends App {
-  DebugConnectedBSP.main(Array(Config.path, "wait"))
+  DebugConnectedBSP.main(Array(ConfigMain.path, "wait"))
 }
 
 object DebugLocalGraphToHBase extends App {
-  new GraphToHBaseStreaming(Config).runLocally(debugOnePartition = 0)
-}
-
-object DebugGraphDeltaPrinter extends App {
-  GraphStatePrinter.main(Array(Config.path, "2"))
+  new GraphToHBaseStreaming(ConfigMain).runLocally(debugOnePartition = 0)
 }

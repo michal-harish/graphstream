@@ -11,7 +11,7 @@ import io.amient.donut.DonutApp
  *
  * This class is for submitting the job with `./submit` script, e.g.:
  *
- * ./submit net.imagini.dxp.graphstream.output.GraphToHBaseStreaming /etc/vdna/graphstream/config.properties
+ * ./submit net.imagini.dxp.graphstream.output.GraphToHBaseStreaming /etc/vdna/graphstream/main.properties
  *
  */
 

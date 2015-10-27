@@ -27,7 +27,7 @@ class SyncsToGraphProcessingUnit(config: Properties, args: Array[String]) extend
   val idSpaceSet = Set("a", "r", "d")
   val blacklists = new BlackLists
 
-  val snappyProducer = kafkaUtils.snappyAsyncProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 500)
+  val snappyProducer = kafkaUtils.createProducer[VidKafkaPartitioner]("snappy_producer")
 
   override def onShutdown: Unit = {
     snappyProducer.close

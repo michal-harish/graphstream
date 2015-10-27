@@ -21,7 +21,7 @@ import scala.io.Source
 
 DATE="2015-09-25"; gunzip -c /storage/fileshare/.. | \
 java -cp graphstream-0.9.jar:/opt/scala/scala-library-2.11.5.jar:/opt/scala/kafka_2.11-0.8.2.1.jar \
-net.imagini.dxp.graphstream.ingest.FileToGraph /etc/vdna/graphstream/config.properties "$DATE"
+net.imagini.dxp.graphstream.ingest.FileToGraph /etc/vdna/graphstream/main.properties "$DATE"
 
  */
 
@@ -140,7 +140,7 @@ class FileToGraph(
     var numSoftErrors = 0
     while (true) try {
       if (producer == null) {
-        producer = kafkaUtils.snappyAsyncProducer[VidKafkaPartitioner](numAcks = 0, batchSize = 500)
+        producer = kafkaUtils.createProducer[VidKafkaPartitioner]("snappy_producer")
       }
       producer.send(new KeyedMessage("graphdelta",
         ByteUtils.bufToArray(message._1), ByteUtils.bufToArray(message._2)))

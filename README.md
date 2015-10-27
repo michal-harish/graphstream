@@ -102,19 +102,31 @@ So the bottom line of the memory question, is that when the state is local to th
 ## Configuration
 </a>
 
-Because the application is launched normally in the YARN cluster but *from a client machine*, in the application configuration (typially placed in **/etc/vdna/graphstream/config.properties**) you need `yarn1.site` parameter to point to your local hadoop-yarn configuration files, which in this example are expected to be in **/opt/envs/prod/etc/hadoop**. This configuration can be used on developer macs for launching from IntelliJ (see bleow) or Jenkins or other starting points.
+Because the application is launched normally in the YARN cluster but *from a client machine*, in the application configuration (typically placed in **/etc/vdna/graphstream/main.properties**) you need `yarn1.site` parameter to point to your local hadoop-yarn configuration files, which in this example are expected to be in **/opt/envs/prod/etc/hadoop**. This configuration can be used on developer macs for launching from IntelliJ (see bleow) or Jenkins or other starting points.
 
 ```
-#YARN 
+#YARN Environment
 yarn1.site=/opt/envs/prod/etc/hadoop
 yarn1.classpath=/opt/scala/scala-library-2.11.5.jar:/opt/scala/kafka_2.11-0.8.2.1.jar:/usr/lib/hbase/*:/usr/lib/hbase/lib/htrace-core-3.1.0-incubating.jar:/usr/lib/hbase/lib/guava-12.0.1.jar:/usr/lib/hbase/lib/netty-all-4.0.23.Final.jar
 yarn1.queue=developers
 #J-PROFILER
 #yarn1.env.LD_PRELOAD=/opt/jprofiler/librebind.so
 #yarn1.env.REBIND_PORT=8849:0
-#KAFKA 
-zookeeper.connect=message-01.prod.visualdna.com,message-02.prod.visualdna.com,message-03.prod.visualdna.com
-kafka.brokers=message-01.prod.visualdna.com:9092,message-02.prod.visualdna.com:9092,message-03.prod.visualdna.com:9092
+#KAFKA Input 
+kafka.brokers=...:9092, ...
+#KAFKA Output
+snappy_producer.metadata.broker.list=...:9092
+snappy_producer.request.required.acks=0
+snappy_producer.compression.codec=2
+snappy_producer.type=async
+snappy_producer.batch.num.messages=500
+snappy_producer.queue.buffering.max.messages=10000
+compact_producer.metadata.broker.list=...:9092
+compact_producer.request.required.acks=0
+compact_producer.compression.codec=0
+compact_producer.type=async
+compact_producer.batch.num.messages=300
+compact_producer.queue.buffering.max.messages=5000
 #HBASE
 hbase.site=/etc/hbase/conf.prod
 ```
@@ -132,13 +144,13 @@ mvn clean package
 The maven command above will generate an assembly jar for all components: `targets/SyncsToGraph-0.9.jar` and a `./submit` which can be used as follows:  
 
 ```
-./submit net.imagini.dxp.graphstream.connectedbsp.ConnectedBSP /etc/vdna/graphstream/config.properties
+./submit net.imagini.dxp.graphstream.connectedbsp.ConnectedBSP /etc/vdna/graphstream/main.properties
 ```
 
 OR
 
 ```
-./submit net.imagini.dxp.graphstream.ingest.SyncsToGraph /etc/vdna/graphstream/config.properties
+./submit net.imagini.dxp.graphstream.ingest.SyncsToGraph /etc/vdna/graphstream/bridge.properties
 ```
 
 ### YARN resources
