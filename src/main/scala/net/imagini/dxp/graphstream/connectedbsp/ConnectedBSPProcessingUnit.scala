@@ -31,12 +31,10 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
   val deltaOutThroughput = new AtomicLong(0)
   val deltaOut = new AtomicLong(0)
 
-  val debug = config.getProperty("debug", "false").toBoolean
-  if (debug) println("BSP DEBUG MODE ENABLED!")
+  val debug = tryOrReport(config.getProperty("debug", "false").toBoolean)
+  val maxMemoryMemstoreMb = tryOrReport(config.getProperty("direct.memory.mb").toInt / numPartitions - 128)
 
-  val maxMemoryMemstoreMb = config.getProperty("direct.memory.mb").toInt / numPartitions - 128
-
-  private val logmap = new ConcurrentLogHashMap(
+  private val logmap = tryOrReport(new ConcurrentLogHashMap(
     maxMemoryMemstoreMb,
     segmentSizeMb = 100,
     compressMinBlockSize = 131070,
@@ -53,9 +51,9 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
         new KeyedMessage("graphdelta", key, null.asInstanceOf[ByteBuffer])
       ))
     }
-  }
+  })
 
-  private val memstore = new MemStoreLogMap(logmap)
+  private val memstore = tryOrReport(new MemStoreLogMap(logmap))
 
 //  private val server = new MemStoreServer(memstore)
 //
@@ -67,7 +65,7 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
    * The processor is a separate class for testing purpose. The processing unit provides the
    * integration with the mssaging infrastructure, the processor is a stateless logic.
    */
-  private val processor = new ConnectedBSPProcessor(minEdgeProbability = 0.75, memstore)
+  private val processor = tryOrReport(new ConnectedBSPProcessor(minEdgeProbability = 0.75, memstore))
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {
     topic match {

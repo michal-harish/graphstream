@@ -118,13 +118,13 @@ kafka.brokers=...:9092, ...
 snappy_producer.metadata.broker.list=...:9092
 snappy_producer.request.required.acks=0
 snappy_producer.compression.codec=2
-snappy_producer.type=async
+snappy_producer.producer.type=async
 snappy_producer.batch.num.messages=500
 snappy_producer.queue.buffering.max.messages=10000
 compact_producer.metadata.broker.list=...:9092
 compact_producer.request.required.acks=0
 compact_producer.compression.codec=0
-compact_producer.type=async
+compact_producer.producer.type=async
 compact_producer.batch.num.messages=300
 compact_producer.queue.buffering.max.messages=5000
 #HBASE
@@ -170,13 +170,13 @@ log.cleaner.enable=true
 ### Creating normal topics with retention
 
 ```bash
-./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphdelta --partitions 32 --replication-factor 1 --config cleanup.policy=delete --config retention.bytes=2147483648 
+./bin/kafka-topics.sh --zookeeper <zkconnect> --topic graphdelta --create --partitions 32 --replication-factor 1 --config cleanup.policy=delete --config retention.bytes=2147483648 
 ```
 
 ### Creating a compacted topic with some special behaviours
 And then creating topic with compact cleanup policy
 ```bash
-./bin/kafka-topics.sh --zookeeper <zkconnect> --create --topic graphstate --partitions 32 --replication-factor 1 --config cleanup.policy=compact --config min.cleanable.dirty.ratio=0.2 --config delete.retention.ms=0 
+./bin/kafka-topics.sh --zookeeper <zkconnect> --topic graphstate --create --partitions 32 --replication-factor 1 --config cleanup.policy=compact --config min.cleanable.dirty.ratio=0.2 --config delete.retention.ms=0 
 ```
 
 Altering the topic to practically ignore the tombstone retention ..10 minutes from default 24 hours

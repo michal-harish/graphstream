@@ -31,18 +31,18 @@ class GraphToHBaseProcessingUnit(config: Properties, args: Array[String]) extend
   val MAX_COMPACTION_SLEEP_TIME_MS = 1000L
   val MAX_NUM_HBASE_RETRIES = 5
 
-  val hbaConf: Configuration = HBaseConfiguration.create()
-  hbaConf.addResource(new Path(s"file://${config.getProperty("yarn1.site")}/core-site.xml"))
-  hbaConf.addResource(new Path(s"file://${config.getProperty("yarn1.site")}/hdfs-site.xml"))
-  hbaConf.addResource(new Path(s"file://${config.getProperty("yarn1.site")}/yarn-site.xml"))
-  hbaConf.addResource(new Path(s"file://${config.getProperty("hbase.site")}/hbase-site.xml"))
+  val hbaConf: Configuration = tryOrReport(HBaseConfiguration.create())
+  tryOrReport(hbaConf.addResource(new Path(s"file://${config.getProperty("yarn1.site")}/core-site.xml")))
+  tryOrReport(hbaConf.addResource(new Path(s"file://${config.getProperty("yarn1.site")}/hdfs-site.xml")))
+  tryOrReport(hbaConf.addResource(new Path(s"file://${config.getProperty("yarn1.site")}/yarn-site.xml")))
+  tryOrReport(hbaConf.addResource(new Path(s"file://${config.getProperty("hbase.site")}/hbase-site.xml")))
 
   log.info("HBase configuration from " + config.getProperty("hbase.site") + "/hbase-site.xml")
   log.info("hbase.zookeeper.quorum = " + hbaConf.get("hbase.zookeeper.quorum"))
 
-  private val compactionSemaphore = new Semaphore(numFetchers)
+  private val compactionSemaphore = tryOrReport(new Semaphore(numFetchers))
 
-  private val compactedQueue = new ConcurrentHashMap[Vid, java.util.Map[Vid, Edge]]
+  private val compactedQueue = tryOrReport(new ConcurrentHashMap[Vid, java.util.Map[Vid, Edge]])
 
   private val deltaCounter = new AtomicLong(0)
 
@@ -56,7 +56,7 @@ class GraphToHBaseProcessingUnit(config: Properties, args: Array[String]) extend
 
   private var loaderThread: LoaderThread = null
 
-  private val tableNameAsString = config.getProperty("hbase.table")
+  private val tableNameAsString = tryOrReport(config.getProperty("hbase.table"))
 
   @volatile private var ts = System.currentTimeMillis
 

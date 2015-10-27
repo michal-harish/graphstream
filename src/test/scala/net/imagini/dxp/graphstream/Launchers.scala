@@ -4,8 +4,8 @@ import io.amient.donut.memstore.MemStoreClient
 import net.imagini.dxp.common.BSPMessage
 import net.imagini.dxp.graphstream.connectedbsp.ConnectedGraphBSPStreaming
 import net.imagini.dxp.graphstream.debugging.{DebugConnectedBSP, DebugConnectedBSPApplication}
-import net.imagini.dxp.graphstream.ingest.{SyncsToGraphStreaming}
-import net.imagini.dxp.graphstream.output.{GraphToHBaseStreaming}
+import net.imagini.dxp.graphstream.ingest.SyncsToGraphStreaming
+import net.imagini.dxp.graphstream.output.GraphToHBaseStreaming
 
 
 object YARNLaunchConnectedBSP extends App {
@@ -25,7 +25,7 @@ object YARNLaunchGraphToHBase extends App {
  */
 
 object DebugLocalSyncsToGraph extends App {
-  new SyncsToGraphStreaming(ConfigBridge).runLocally()
+  new SyncsToGraphStreaming(ConfigBridge).runLocally(debugOnePartition = 0)
 }
 
 object DebugLocalConnectedBSP extends App {

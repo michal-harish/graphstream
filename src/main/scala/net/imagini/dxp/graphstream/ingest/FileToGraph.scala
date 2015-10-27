@@ -54,7 +54,7 @@ class FileToGraph(
   var producer: Producer[Array[Byte], Array[Byte]] = null
   var checkpointNs = 0L
   val checkpointIntervalNs = 60L * 1000000000
-  val msToBackOff = checkpointIntervalNs * 2 / 1000000
+  val msToBackOff = checkpointIntervalNs / 1000000
 
   def processStdIn: Unit = {
 

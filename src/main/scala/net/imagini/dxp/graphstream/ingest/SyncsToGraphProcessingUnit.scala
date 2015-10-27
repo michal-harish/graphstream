@@ -18,31 +18,35 @@ import net.imagini.dxp.common._
  */
 class SyncsToGraphProcessingUnit(config: Properties, args: Array[String]) extends DonutAppTask(config, args) {
 
-  val vdnaMessageDecoder = new VDNAUniversalDeserializer
-  val counterReceived = new AtomicLong(0)
+  val counterRaw = new AtomicLong(0)
+  val counterValid = new AtomicLong(0)
   val counterErrors = new AtomicLong(0)
   val counterFiltered = new AtomicLong(0)
-  val counterValid = new AtomicLong(0)
+  val counterProcess = new AtomicLong(0)
   val counterProduced = new AtomicLong(0)
   val idSpaceSet = Set("a", "r", "d")
-  val blacklists = new BlackLists
 
-  val snappyProducer = kafkaUtils.createProducer[VidKafkaPartitioner]("snappy_producer")
+  val vdnaMessageDecoder = tryOrReport(new VDNAUniversalDeserializer)
 
-  override def onShutdown: Unit = {
-    snappyProducer.close
-  }
+  val blacklists = tryOrReport(new BlackLists)
+
+  val producer = tryOrReport(kafkaUtils.createProducer[VidKafkaPartitioner]("snappy_producer"))
 
   @volatile private var ts = System.currentTimeMillis
 
   override def awaitingTermination: Unit = {
     val period = (System.currentTimeMillis - ts)
     ts = System.currentTimeMillis
-    ui.updateMetric(partition, "input VDNAUserImport/sec", classOf[Throughput], counterReceived.getAndSet(0) * 1000 / period)
-    ui.updateMetric(partition, "input filter/sec", classOf[Throughput], counterFiltered.getAndSet(0 )* 1000 / period)
-    ui.updateMetric(partition, "input valid/sec", classOf[Throughput], counterValid.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "input (1) VDNAUserImport/sec", classOf[Throughput], counterRaw.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "input (2) valid/sec", classOf[Throughput], counterValid.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "input (3) filter/sec", classOf[Throughput], counterFiltered.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "input (4) process/sec", classOf[Throughput], counterProcess.getAndSet(0) * 1000 / period)
     ui.updateMetric(partition, "output errors", classOf[Counter], counterErrors.get)
     ui.updateMetric(partition, "output graphstream/sec", classOf[Throughput], counterProduced.getAndSet(0) * 1000 / period)
+  }
+
+  override def onShutdown: Unit = {
+    producer.close
   }
 
   override protected def createFetcher(topic: String, partition: Int, groupId: String): Fetcher = {
@@ -54,22 +58,30 @@ class SyncsToGraphProcessingUnit(config: Properties, args: Array[String]) extend
           val payloadArray: Array[Byte] = util.Arrays.copyOfRange(payload.array, payload.arrayOffset, payload.arrayOffset + payload.remaining)
           val vdnaMsg = vdnaMessageDecoder.decodeBytes(payloadArray)
           if (vdnaMsg.isInstanceOf[VDNAUserImport]) {
-            counterReceived.incrementAndGet
+            counterRaw.incrementAndGet
             val importMsg = vdnaMsg.asInstanceOf[VDNAUserImport]
             if (importMsg.getUserCookied &&
               !importMsg.getUserOptOut &&
               importMsg.getUserUid != null &&
-              importMsg.getPartnerUserId != null &&
-              idSpaceSet.contains(importMsg.getIdSpace)
+              importMsg.getPartnerUserId != null
             ) {
-              counterFiltered.addAndGet(1L)
-              if ((importMsg.getUserAgent == null || !blacklists.blacklist_ua.contains(importMsg.getUserAgent.trim.hashCode))
-                && !blacklists.blacklist_vdna_uuid.contains(importMsg.getUserUid)
-                && !blacklists.blacklist_id.contains(importMsg.getPartnerUserId)
-                && (importMsg.getClientIp == null || !blacklists.blacklist_ip.contains(importMsg.getClientIp.trim.hashCode))
-              ) {
-                counterValid.addAndGet(1L)
-                transformAndProduce(importMsg)
+              counterValid.addAndGet(1L)
+              if (importMsg.getIdSpace() == "a") {
+                println("a")
+              }
+              if (importMsg.getIdSpace() == "d") {
+                println("d")
+              }
+              if (idSpaceSet.contains(importMsg.getIdSpace())) {
+                counterFiltered.addAndGet(1L)
+                if ((importMsg.getUserAgent == null || !blacklists.blacklist_ua.contains(importMsg.getUserAgent.trim.hashCode))
+                  && !blacklists.blacklist_vdna_uuid.contains(importMsg.getUserUid)
+                  && !blacklists.blacklist_id.contains(importMsg.getPartnerUserId)
+                  && (importMsg.getClientIp == null || !blacklists.blacklist_ip.contains(importMsg.getClientIp.trim.hashCode))
+                ) {
+                  counterProcess.addAndGet(1L)
+                  transformAndProduce(importMsg)
+                }
               }
             }
           }
@@ -83,15 +95,15 @@ class SyncsToGraphProcessingUnit(config: Properties, args: Array[String]) extend
       val vdnaId = Vid("vdna", importMsg.getUserUid.toString)
       val partnerId = Vid(importMsg.getIdSpace, importMsg.getPartnerUserId)
       val edge = Edge("AAT", 1.0, importMsg.getTimestamp)
-      snappyProducer.send(
+      producer.send(
         new KeyedMessage(
           "graphdelta",
           ByteUtils.bufToArray(BSPMessage.encodeKey(vdnaId)),
           ByteUtils.bufToArray(BSPMessage.encodePayload(1, partnerId -> edge))),
         new KeyedMessage(
           "graphdelta",
-            ByteUtils.bufToArray(BSPMessage.encodeKey(partnerId)),
-            ByteUtils.bufToArray(BSPMessage.encodePayload(1, vdnaId -> edge)))
+          ByteUtils.bufToArray(BSPMessage.encodeKey(partnerId)),
+          ByteUtils.bufToArray(BSPMessage.encodePayload(1, vdnaId -> edge)))
       )
       counterProduced.addAndGet(2L)
     } catch {
