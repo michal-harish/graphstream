@@ -254,7 +254,6 @@ The reason for the test package is that many dependencies are provided and not a
 
 ### TODOs  
 - Edges should not be represented as Map[Vid, EdgeProps] but rather Set[Edge] where Edge object would contain the dest Vid to allow for duplicate connections with different properties 
-- SyncsToGraph could have a small-ish local state for short window memstore for better detection of bad data, robots, etc.  
-
+- SyncsToGraph could have a small-ish local state for short window memstore for better detection of bad data, robots, etc.
 
 
