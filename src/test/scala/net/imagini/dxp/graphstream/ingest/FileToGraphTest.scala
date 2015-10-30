@@ -11,7 +11,7 @@ import scala.io.Source
  */
 class FileToGraphTest extends FlatSpec with Matchers {
 
-  val component = new FileToGraph(ConfigMain, "2015-09-25", mobileIdSpace = "idfa", probabilityThreshold = 1.0)
+  val component = new FileToGraph(ConfigMain, 0L, mobileIdSpace = "idfa", probabilityThreshold = 1.0)
 
   val syncs = Source.fromInputStream(getClass.getResourceAsStream("/sample_cw.tsv")).getLines.flatMap { ln =>
     component.processLine(ln) match {

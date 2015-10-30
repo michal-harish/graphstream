@@ -39,11 +39,11 @@ object ConnectedGraphBSPStreaming {
 
 class ConnectedGraphBSPStreaming(config: Properties) extends DonutApp[ConnectedBSPProcessingUnit]({
 
-  // Memory Footprint (32 partitions in both topics) = 200g + (32 x 1g overhead) + 1g= 233 Gb
+  // Memory Footprint (32 partitions in both topics) = 100g + (32 x 1g overhead) + 1g = 133Gb
   config.setProperty("group.id", ConnectedGraphBSPStreaming.GROUP_ID)
   config.setProperty("topics", "graphdelta,graphstate")
   config.setProperty("cogroup", "true")
-  config.setProperty("direct.memory.mb",      "200000")
+  config.setProperty("direct.memory.mb",      "100000")
   config.setProperty("task.overhead.memory.mb", "1024")
   config.setProperty("yarn1.jvm.args", "-XX:+UseSerialGC -XX:NewRatio=2 -agentpath:/opt/jprofiler/bin/linux-x64/libjprofilerti.so=port=8849,nowait")
   config.setProperty("yarn1.restart.enabled", "true")

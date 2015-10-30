@@ -5,10 +5,10 @@ import java.text.SimpleDateFormat
 /**
  * Created by mharis on 01/10/15.
  */
-class CWDecoder(date: String, mobileIdSpace: String, probabilityThreshold: Double) {
+class CWDecoder(mobileIdSpace: String, probabilityThreshold: Double) extends Serializable {
 
   val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
-  val ts = dateFormat.parse(date).getTime
+  val ts = System.currentTimeMillis
   val msIdSpace = IdSpace(mobileIdSpace)
   val allSpaces = mobileIdSpace == "*"
 

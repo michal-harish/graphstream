@@ -42,7 +42,7 @@ class SyncsToGraphProcessingUnit(config: Properties, args: Array[String]) extend
     ui.updateMetric(partition, "input (3) filter/sec", classOf[Throughput], counterFiltered.getAndSet(0) * 1000 / period)
     ui.updateMetric(partition, "input (4) process/sec", classOf[Throughput], counterProcess.getAndSet(0) * 1000 / period)
     ui.updateMetric(partition, "output errors", classOf[Counter], counterErrors.get)
-    ui.updateMetric(partition, "output graphstream/sec", classOf[Throughput], counterProduced.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "output graphdelta/sec", classOf[Throughput], counterProduced.getAndSet(0) * 1000 / period)
   }
 
   override def onShutdown: Unit = {

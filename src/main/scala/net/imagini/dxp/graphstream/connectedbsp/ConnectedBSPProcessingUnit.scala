@@ -22,6 +22,7 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
 
   val evictions = new AtomicLong(0)
   val stateIn = new AtomicLong(0)
+  val stateInThroughput = new AtomicLong(0)
   val stateInvalid = new AtomicLong(0)
   val stateOut = new AtomicLong(0)
   val deltaIn = new AtomicLong(0)
@@ -75,6 +76,7 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
             try {
               processor.bootState(messageAndOffset.message.key, messageAndOffset.message.payload)
               stateIn.incrementAndGet
+              stateInThroughput.incrementAndGet
             } catch {
               case e: IllegalArgumentException => {
                 if (debug) e.printStackTrace
@@ -116,7 +118,8 @@ class ConnectedBSPProcessingUnit(config: Properties, args: Array[String]) extend
   override def awaitingTermination {
     val period = (System.currentTimeMillis - ts)
     ts = System.currentTimeMillis
-    ui.updateMetric(partition, "input state/sec", classOf[Throughput], stateIn.getAndSet(0) * 1000 / period)
+    ui.updateMetric(partition, "input state total", classOf[Throughput], stateIn.get)
+    ui.updateMetric(partition, "input state/sec", classOf[Throughput], stateInThroughput.getAndSet(0) * 1000 / period)
     ui.updateMetric(partition, "input state-error", classOf[Counter], stateInvalid.get)
     ui.updateMetric(partition, "output state/sec", classOf[Throughput], stateOut.getAndSet(0) * 1000 / period)
 

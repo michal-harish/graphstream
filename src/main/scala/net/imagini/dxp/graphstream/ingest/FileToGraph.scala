@@ -22,18 +22,20 @@ import scala.io.Source
 DATE="2015-09-25"; gunzip -c /storage/fileshare/.. | \
 java -cp graphstream-0.9.jar:/opt/scala/scala-library-2.11.5.jar:/opt/scala/kafka_2.11-0.8.2.1.jar \
 net.imagini.dxp.graphstream.ingest.FileToGraph /etc/vdna/graphstream/main.properties "$DATE"
-
+java -cp graphstream-0.9.jar:/opt/scala/scala-library-2.11.5.jar:/opt/scala/kafka_2.11-0.8.2.1.jar \
+ /etc/vdna/graphstream/main.properties $DATE [$SKIP_MESSAGES [$MOBILE_SPACES [$PROBABILITY] ] ] ]"
  */
 
 object FileToGraph extends App {
 
   val config = new Properties
   config.load(new FileInputStream(args(0)))
-  val date = args(1)
-  val probabilityThreshold = if (args.length >= 3) args(2).toDouble else 0.75
-  val mobileIdSpace = if (args.length >= 4) args(3) else "*"
+  val date = args(1) //not used
+  val skipNumMessages = if (args.length >= 3) args(2).toLong else 0L
+  val probabilityThreshold = if (args.length >= 4) args(3).toDouble else 0.75
+  val mobileIdSpace = if (args.length >= 5) args(4) else "*"
   try {
-    new FileToGraph(config, date, mobileIdSpace, probabilityThreshold).processStdIn
+    new FileToGraph(config, skipNumMessages, mobileIdSpace, probabilityThreshold).processStdIn
   } catch {
     case e: Throwable => {
       e.printStackTrace()
@@ -43,14 +45,13 @@ object FileToGraph extends App {
 
 }
 
-class FileToGraph(
-                   config: Properties,
-                   val date: String,
-                   val mobileIdSpace: String,
-                   val probabilityThreshold: Double) {
+class FileToGraph(config: Properties,
+                  val skipNumMessages: Long,
+                  val mobileIdSpace: String,
+                  val probabilityThreshold: Double) {
 
   val kafkaUtils = new KafkaUtils(config)
-  val decoder = new CWDecoder(date, mobileIdSpace, probabilityThreshold)
+  val decoder = new CWDecoder(mobileIdSpace, probabilityThreshold)
   var producer: Producer[Array[Byte], Array[Byte]] = null
   var checkpointNs = 0L
   val checkpointIntervalNs = 60L * 1000000000
@@ -58,7 +59,7 @@ class FileToGraph(
 
   def processStdIn: Unit = {
 
-    println(s"Preparing CWDecoder for DATE = ${date}, " +
+    println(s"Preparing CWDecoder with skipNumMessages = ${skipNumMessages}}, " +
       s"mobile space = ${mobileIdSpace}, probability >= ${probabilityThreshold}\n")
 
     var counterIgnored = 0L
@@ -71,18 +72,22 @@ class FileToGraph(
           if (ln != null) processLine(ln) match {
             case None => counterIgnored += 1L
             case Some(couple) => {
-              produce(couple(0))
               counterProduced += 1L
-              produce(couple(1))
               counterProduced += 1L
+              if (counterProduced > skipNumMessages) {
+                produce(couple(0))
+                produce(couple(1))
+              }
             }
           }
           val ns = System.nanoTime
           if (checkpointNs + checkpointIntervalNs < ns) {
             println(s"IGNORED LINES: ${counterIgnored} ...")
             println(s"PRODUCED MESSAGES: ${counterProduced} ...")
-            while (feedbackLoop) {
-              Thread.sleep(msToBackOff)
+            if (counterProduced > skipNumMessages) {
+              while (feedbackLoop) {
+                Thread.sleep(msToBackOff)
+              }
             }
             checkpointNs = ns
           }
